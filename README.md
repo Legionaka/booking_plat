@@ -90,5 +90,5 @@ Tests require real PostgreSQL and Redis. Set `TEST_DATABASE_URL`, `MIGRATION_DAT
 ## Live demo and screenshots
 
 - **Live demo:** `[Deployment URL to be added]`
-- **Screenshots:** `[Add approved product screenshots here]`
+- **Screenshots:** `[ product screenshots here]`
 
