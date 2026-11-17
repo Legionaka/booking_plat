@@ -1,0 +1,76 @@
+.glass {
+  --glass-radius: var(--r-card);
+  --glass-fill: var(--glass);
+  --glass-blur: var(--blur-glass);
+
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--glass-radius);
+  background: var(--graphite);
+  box-shadow: inset 0 1px 0 var(--glass-inner-glow), 0 24px 72px var(--glass-shadow);
+}
+
+.glass::before,
+.glass::after {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  content: "";
+}
+
+.glass > * {
+  position: relative;
+  z-index: 1;
+}
+
+.glass::before {
+  background: linear-gradient(180deg, var(--glass-top), var(--clear) 18%);
+  opacity: 0.8;
+}
+
+.glass::after {
+  background: radial-gradient(
+    circle at var(--mx, 50%) var(--my, 0%),
+    var(--sheen),
+    var(--clear) 46%
+  );
+  opacity: 0;
+  transition: opacity var(--motion-quick) ease;
+}
+
+.glass--background {
+  --glass-radius: var(--r-panel);
+  --glass-fill: var(--glass-background-fill);
+  --glass-blur: var(--blur-background);
+}
+
+.glass--card {
+  --glass-radius: var(--r-card);
+  --glass-fill: var(--glass);
+  --glass-blur: var(--blur-glass);
+}
+
+.glass--floating {
+  --glass-radius: var(--r-card);
+  --glass-fill: var(--glass-floating-fill);
+  --glass-blur: var(--blur-floating);
+  border-color: var(--glass-top);
+  box-shadow: inset 0 1px 0 var(--glass-inner-glow), 0 32px 88px var(--glass-shadow);
+}
+
+@supports (backdrop-filter: blur(var(--blur-glass))) {
+  .glass {
+    background: var(--glass-fill);
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    backdrop-filter: blur(var(--glass-blur));
+  }
+}
+
+.glass:hover::after,
+.glass:focus-within::after {
+  opacity: 1;
+}

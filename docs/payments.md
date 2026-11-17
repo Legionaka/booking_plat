@@ -3,7 +3,7 @@
 ## Payment flow
 
 1. A verified customer starts payment for their own pending booking. The service checks the deposit and active hold, creates or reuses a pending PayFast payment, and extends the hold to at least the PAYMENT_HOLD_MINUTES setting.
-2. The API returns PayFast's sandbox or live checkout action URL plus signed form fields. The form includes merchant ID/key, return/cancel/notify URLs, a unique m_payment_id, amount formatted from integer cents, and the service name. It omits customer personal details.
+2. `POST /api/bookings/{id}/pay` returns PayFast's sandbox or live checkout action URL plus signed form fields. The authenticated browser then posts to `POST /payments/handoff/{id}`; that page renders the same server-generated fields into a form and submits it with `/static/js/payfast-handoff.js`. Only the handoff page has a CSP `form-action` exception for PayFast.
 3. The customer pays on PayFast. The return URL is only a browser return; it does not confirm payment. A client can poll GET /api/me/bookings/{id} for payment_status.
 4. PayFast posts an ITN to /api/payments/payfast/itn. Only a validated COMPLETE ITN can mark a payment paid and confirm its still-pending booking. Confirmation creates the slice 6 outbox rows in the same transaction.
 5. FAILED and CANCELLED ITNs leave the booking pending until its hold expires. An unknown payment status is recorded on the payment without changing its status.
@@ -21,6 +21,8 @@ The webhook performs checks in this order and stops at the first failure:
 7. Apply the status idempotently. A late successful payment for an already-cancelled booking is recorded as paid but does not reinstate the booking.
 
 The signature implementation follows PayFast's [Custom Payment Integration](https://developers.payfast.co.za/docs) and [ITN](https://developers.payfast.co.za/docs/itn-instant-transaction-notification/) documentation. Custom payment signatures use the form field order documented by PayFast, nonblank fields only, trimmed values URL-encoded with spaces as +, and the passphrase appended at the end. ITN verification preserves the posted field order and signs the fields before signature.
+
+The handoff form actions are `https://www.payfast.co.za/eng/process` (live) and `https://sandbox.payfast.co.za/eng/process` (sandbox), as listed in PayFast's official [Custom Payment Integration documentation](https://developers.payfast.co.za/docs). The route-specific CSP permits form submissions only to those two hosts and this application's own origin; every other route keeps `form-action 'self'`.
 
 ## Local sandbox testing
 

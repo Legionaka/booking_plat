@@ -64,10 +64,19 @@ See [docs/environment.md](docs/environment.md) for configuration and [docs/opera
 Start the PostgreSQL and Redis services, then install the development dependencies and run:
 
 ```sh
-python -m pip install -r requirements-dev.txt
+python -m pip install --require-hashes -r requirements-dev.txt
 ruff check .
 pytest -q
 ```
+
+Runtime ranges are maintained in `requirements.in`, then compiled with pip-tools into the hashed `requirements.txt` used by the Docker image. To update dependencies, edit the input ranges and run:
+
+```sh
+python -m piptools compile --upgrade --allow-unsafe --strip-extras --generate-hashes --output-file=requirements.txt requirements.in
+python -m piptools compile --upgrade --allow-unsafe --strip-extras --generate-hashes --output-file=requirements-dev.txt requirements-dev.in
+```
+
+Review the resulting pins and hashes, then run the full tests and Docker build. Dependabot opens weekly dependency update PRs.
 
 Tests require real PostgreSQL and Redis. Set `TEST_DATABASE_URL`, `MIGRATION_DATABASE_URL`, and `TEST_REDIS_URL` to dedicated test resources if the local defaults do not fit your setup.
 

@@ -3,7 +3,7 @@
 from datetime import UTC, datetime, time, timedelta
 from functools import wraps
 
-from flask import Blueprint, g, jsonify, request
+from flask import Blueprint, g, jsonify, render_template, request
 from pydantic import ValidationError
 from sqlalchemy import select
 
@@ -32,6 +32,19 @@ def _errors(view):
 @login_required
 def start_payfast_payment(booking_id: int):
     return jsonify({"data": service.start_payment(g.current_user, booking_id)})
+
+
+@payments_bp.post("/payments/handoff/<int:booking_id>")
+@_errors
+@login_required
+def payfast_handoff(booking_id: int):
+    """Render and submit the server-generated PayFast form under a narrow CSP exception."""
+    payment = service.start_payment(g.current_user, booking_id)
+    return render_template(
+        "payments/payfast_handoff.html",
+        action_url=payment["action_url"],
+        fields=payment["fields"],
+    )
 
 
 @payments_bp.post("/api/payments/payfast/itn")

@@ -1,0 +1,110 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  min-width: 320px;
+  background: var(--obsidian);
+  color: var(--pearl);
+  font-family: var(--font-ui);
+  font-size: var(--text-16);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  scroll-behavior: smooth;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+  background: var(--obsidian);
+  color: var(--pearl);
+  isolation: isolate;
+}
+
+::selection {
+  background: var(--silver);
+  color: var(--obsidian);
+}
+
+a {
+  color: inherit;
+}
+
+button,
+input,
+select,
+textarea {
+  color: inherit;
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+.ambient-light {
+  position: fixed;
+  z-index: -1;
+  inset: -20%;
+  overflow: hidden;
+  pointer-events: none;
+  filter: blur(var(--blur-ambient));
+  animation: ambient-drift var(--motion-ambient) ease-in-out infinite alternate;
+}
+
+.ambient-light::before,
+.ambient-light::after {
+  position: absolute;
+  width: 52vw;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  content: "";
+}
+
+.ambient-light::before {
+  top: 2%;
+  left: 8%;
+  background: radial-gradient(ellipse, var(--silver-light), var(--clear) 68%);
+}
+
+.ambient-light::after {
+  right: 5%;
+  bottom: 0;
+  background: radial-gradient(ellipse, var(--steel-light), var(--clear) 68%);
+}
+
+:focus-visible {
+  outline: 2px solid var(--pearl);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 5px var(--focus-glow);
+}
+
+@keyframes ambient-drift {
+  from {
+    transform: translate3d(-1%, -1%, 0) scale(0.98);
+  }
+
+  to {
+    transform: translate3d(2%, 2%, 0) scale(1.04);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

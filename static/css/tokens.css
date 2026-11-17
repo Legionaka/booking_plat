@@ -1,0 +1,70 @@
+:root {
+  color-scheme: dark;
+
+  /* Section 13 palette. Status hues are reserved for booking status. */
+  --obsidian: #050506;
+  --graphite: #0e0f12;
+  --pearl: #f5f6f8;
+  --silver: #c4c9d4;
+  --fog: #9298a6;
+  --dim: #7a8090;
+  --steel: #8a93a6;
+  --amber: #e3b25c;
+  --jade: #4ade9f;
+  --rose: #ff6b8a;
+
+  /* Translucent values used by the glass and ambient-light recipes. */
+  --glass: rgba(245, 246, 248, 0.05);
+  --glass-background-fill: rgba(245, 246, 248, 0.04);
+  --glass-floating-fill: rgba(245, 246, 248, 0.06);
+  --glass-border: rgba(245, 246, 248, 0.1);
+  --glass-top: rgba(245, 246, 248, 0.24);
+  --silver-light: rgba(201, 206, 216, 0.1);
+  --steel-light: rgba(138, 147, 166, 0.12);
+  --sheen: rgba(245, 246, 248, 0.12);
+  --focus-glow: rgba(245, 246, 248, 0.18);
+  --glass-inner-glow: rgba(245, 246, 248, 0.035);
+  --glass-shadow: rgba(0, 0, 0, 0.42);
+  --clear: transparent;
+
+  /* Radius roles from section 13. */
+  --r-panel: 28px;
+  --r-card: 20px;
+  --r-control: 14px;
+  --r-slot: 12px;
+  --r-pill: 999px;
+
+  /* Typography roles and the specified seven-step type scale. */
+  --font-display: "Bricolage Grotesque", sans-serif;
+  --font-ui: "Instrument Sans", sans-serif;
+  --text-14: 14px;
+  --text-16: 16px;
+  --text-20: 20px;
+  --text-28: 28px;
+  --text-40: 40px;
+  --text-56: 56px;
+  --text-72: 72px;
+
+  /* 8 px spacing grid. */
+  --space-0: 0;
+  --space-1: 8px;
+  --space-2: 16px;
+  --space-3: 24px;
+  --space-4: 32px;
+  --space-5: 40px;
+  --space-6: 48px;
+  --space-7: 56px;
+  --space-8: 64px;
+  --space-9: 72px;
+  --space-10: 80px;
+  --space-11: 88px;
+  --space-12: 96px;
+
+  /* Blur and motion values are tokens so components never hard-code them. */
+  --blur-glass: 28px;
+  --blur-background: 24px;
+  --blur-floating: 32px;
+  --blur-ambient: 96px;
+  --motion-quick: 180ms;
+  --motion-ambient: 60s;
+}

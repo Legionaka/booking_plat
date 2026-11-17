@@ -91,45 +91,17 @@ def seed_demo_command(reset: bool):
 
 @click.group("demo")
 def demo_cli():
-    """Commands for low-cost, single-process demonstrations."""
+    """Commands for low-cost, single-container demonstrations."""
 
 
 @demo_cli.command("run-all")
 @with_appcontext
 def demo_run_all():
-    """Run web, RQ worker, and scheduler threads in one process for demos."""
-    import threading
+    """Run web, RQ worker, and scheduler as supervised children for demos."""
+    from app.demo_runtime import build_demo_commands, supervise_demo_processes
 
-    from rq import SimpleWorker
-    from werkzeug.serving import make_server
-
-    flask_app = current_app._get_current_object()
-    stop_event = threading.Event()
-
-    def worker_loop():
-        from app.services.notification_jobs import _queue
-
-        with flask_app.app_context():
-            queue = _queue()
-            SimpleWorker([queue], connection=queue.connection).work(
-                with_scheduler=False, logging_level="INFO"
-            )
-
-    def scheduler_loop():
-        with flask_app.app_context():
-            interval = flask_app.config["SCHEDULER_INTERVAL_SECONDS"]
-            while not stop_event.is_set():
-                run_scheduler_once(datetime.now(UTC))
-                stop_event.wait(interval)
-
-    threading.Thread(target=worker_loop, name="rq-worker", daemon=True).start()
-    threading.Thread(target=scheduler_loop, name="booking-scheduler", daemon=True).start()
-    server = make_server(
-        "0.0.0.0", flask_app.config["PORT"], flask_app, threaded=True
-    )
-    click.echo("Demo mode: web, worker, and scheduler share one process.")
-    try:
-        server.serve_forever()
-    finally:
-        stop_event.set()
-        server.server_close()
+    config = current_app.config
+    commands = build_demo_commands(config["PORT"], config["WEB_WORKERS"])
+    click.echo("Demo mode: supervising web, worker, and scheduler processes.")
+    exit_code = supervise_demo_processes(commands)
+    raise click.exceptions.Exit(exit_code)

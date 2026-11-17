@@ -39,7 +39,7 @@ The command palette, booking detail drawer, and toasts are shared components, no
 
 ## Design tokens
 
-Map Figma variables to CSS custom properties in `app/static/css/tokens.css`:
+Map Figma variables to CSS custom properties in `static/css/tokens.css`:
 
 | Figma variable | CSS property |
 | --- | --- |
@@ -52,6 +52,10 @@ Map Figma variables to CSS custom properties in `app/static/css/tokens.css`:
 | `blur/glass` | `--blur-glass` |
 
 The plan's starting theme is Obsidian `#050506`, Graphite `#0E0F12`, Pearl `#F5F6F8`, Silver `#C4C9D4`, Fog `#9298A6`, Dim `#7A8090`, Steel `#8A93A6`, Amber `#E3B25C`, Jade `#4ADE9F`, and Rose `#FF6B8A`. Amber, Jade, and Rose are reserved for booking status. Confirm final values and spacing tokens against Figma.
+
+### Current implementation checkpoint
+
+The Figma file is not ready for implementation yet. The initial CSS tokens and frontend foundation therefore follow section 13 of `docs/planning.md`. Reconcile the palette, glass fills, ambient light, typefaces, type scale, radii, blur, and spacing tokens with the approved Figma variables and frames before treating these values as final.
 
 ## Implementation rules
 

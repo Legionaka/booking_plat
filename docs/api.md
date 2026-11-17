@@ -76,6 +76,8 @@ Implemented owner and staff management routes, permissions, pagination, audit lo
 
 | Method | Path | Purpose | Access |
 | --- | --- | --- | --- |
+| POST | `/api/bookings/<id>/pay` | Start or reuse a pending PayFast payment; return its action URL and signed form fields | Booking owner |
+| POST | `/payments/handoff/<id>` | Render the server-generated PayFast form and submit it using an external script | Booking owner; CSRF required |
 | POST | `/api/payments/payfast/itn` | Validate PayFast ITN signature and amount, then apply payment idempotently | PayFast callback |
 | GET | `/health` | Liveness check | Public or infrastructure-only (deployment decision TBD) |
 | GET | `/ready` | Postgres and Redis readiness check; returns only a status | Infrastructure |

@@ -69,13 +69,13 @@ docker compose up --build db redis web worker scheduler
 
 For a manual process, run `flask --app app:create_app worker run` and `flask --app app:create_app scheduler run` in separate terminals. Keep one scheduler process active; duplicate passes are safe, but a single scheduler is operationally simpler. Monitor JSON logs for retry failures and inspect notification status in PostgreSQL.
 
-For a small demo where a host charges per service, run the web server, an RQ `SimpleWorker`, and scheduler threads in one process/container:
+For a small demo where a host charges per service, run the web server, RQ worker, and scheduler under one supervisor/container:
 
 ```sh
 flask --app app:create_app demo run-all
 ```
 
-This uses Werkzeug's threaded development server and is for demos only, not production traffic. Provide the same database, Redis, email, and PayFast sandbox settings used by the separate services. Set `DEMO_MODE=true` to let a frontend display its no-real-payments banner; startup refuses that mode if `PAYFAST_SANDBOX=false`.
+This starts Gunicorn, the normal RQ worker, and the scheduler as child processes. The supervisor exits nonzero and stops the other services if any child exits, so the host can restart the container. Separate processes keep RQ signal handling on the worker's main thread. It is for low-traffic demos, not production scaling. Provide the same database, Redis, email, and PayFast sandbox settings used by the separate services. Set `DEMO_MODE=true` to let a frontend display its no-real-payments banner; startup refuses that mode if `PAYFAST_SANDBOX=false`.
 
 ## Health and incidents
 

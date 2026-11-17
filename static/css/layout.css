@@ -1,0 +1,247 @@
+.page-shell {
+  width: min(100% - var(--space-4), 1440px);
+  margin-inline: auto;
+  padding-block: var(--space-8) var(--space-12);
+}
+
+.page-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-6);
+}
+
+.page-header__copy {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.page-kicker {
+  color: var(--silver);
+  font-size: var(--text-14);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.content-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.span-full {
+  grid-column: 1 / -1;
+}
+
+.span-half {
+  grid-column: span 6;
+}
+
+.section-card {
+  display: grid;
+  align-content: start;
+  gap: var(--space-3);
+  min-width: 0;
+  padding: var(--space-4);
+}
+
+.section-heading {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.swatch-grid,
+.type-grid,
+.glass-grid,
+.font-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr));
+  gap: var(--space-2);
+}
+
+.swatch-item,
+.type-sample,
+.font-sample {
+  display: grid;
+  align-content: start;
+  gap: var(--space-1);
+  min-width: 0;
+  padding: var(--space-2);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--r-control);
+  background: var(--graphite);
+}
+
+.swatch-chip {
+  display: block;
+  min-height: 48px;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--r-slot);
+  background: var(--swatch-color);
+}
+
+.swatch-label {
+  color: var(--pearl);
+  font-size: var(--text-14);
+}
+
+.swatch-obsidian {
+  --swatch-color: var(--obsidian);
+}
+
+.swatch-graphite {
+  --swatch-color: var(--graphite);
+}
+
+.swatch-pearl {
+  --swatch-color: var(--pearl);
+}
+
+.swatch-silver {
+  --swatch-color: var(--silver);
+}
+
+.swatch-fog {
+  --swatch-color: var(--fog);
+}
+
+.swatch-dim {
+  --swatch-color: var(--dim);
+}
+
+.swatch-steel {
+  --swatch-color: var(--steel);
+}
+
+.swatch-glass {
+  --swatch-color: var(--glass);
+}
+
+.swatch-silver-light {
+  --swatch-color: var(--silver-light);
+}
+
+.swatch-steel-light {
+  --swatch-color: var(--steel-light);
+}
+
+.swatch-amber {
+  --swatch-color: var(--amber);
+}
+
+.swatch-jade {
+  --swatch-color: var(--jade);
+}
+
+.swatch-rose {
+  --swatch-color: var(--rose);
+}
+
+.glass-sample {
+  display: grid;
+  align-content: end;
+  min-height: 180px;
+  padding: var(--space-3);
+}
+
+.glass-sample__title {
+  color: var(--pearl);
+  font-family: var(--font-display);
+  font-size: var(--text-20);
+}
+
+.glass-sample__detail {
+  color: var(--fog);
+  font-size: var(--text-14);
+}
+
+.font-sample {
+  min-height: 150px;
+}
+
+.font-sample__preview {
+  color: var(--pearl);
+  font-size: var(--text-28);
+  line-height: 1.2;
+}
+
+.font-sample__name {
+  color: var(--fog);
+  font-size: var(--text-14);
+}
+
+.type-sample__size {
+  color: var(--dim);
+  font-size: var(--text-14);
+}
+
+.status-example {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: 44px;
+  padding-inline: var(--space-2);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--r-pill);
+  background: var(--graphite);
+  color: var(--status-color);
+}
+
+.status-example--amber {
+  --status-color: var(--amber);
+}
+
+.status-example--jade {
+  --status-color: var(--jade);
+}
+
+.status-example--rose {
+  --status-color: var(--rose);
+}
+
+.status-examples {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.button-sample {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding-inline: var(--space-3);
+  border: 1px solid var(--glass-top);
+  border-radius: var(--r-control);
+  background: linear-gradient(135deg, var(--pearl), var(--silver));
+  color: var(--obsidian);
+  font-weight: 600;
+  text-decoration: none;
+  transition: transform var(--motion-quick) ease, box-shadow var(--motion-quick) ease;
+}
+
+.button-sample:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 32px var(--focus-glow);
+}
+
+@media (max-width: 760px) {
+  .page-shell {
+    width: min(100% - var(--space-2), 1440px);
+    padding-block: var(--space-5) var(--space-8);
+  }
+
+  .span-half {
+    grid-column: 1 / -1;
+  }
+
+  .section-card {
+    padding: var(--space-3);
+  }
+
+  .page-header h1 {
+    font-size: var(--text-28);
+  }
+}

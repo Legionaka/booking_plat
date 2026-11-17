@@ -175,6 +175,49 @@ def client_for(app, user_id):
     return client, csrf
 
 
+def test_payfast_handoff_has_only_route_specific_form_action_policy(
+    app, scenario, monkeypatch
+):
+    customer, csrf = client_for(app, scenario["users"][0])
+    payment = {
+        "action_url": "https://sandbox.payfast.co.za/eng/process",
+        "fields": {"merchant_id": "test-merchant", "amount": "10.00"},
+    }
+    monkeypatch.setattr(payment_service, "start_payment", lambda *_args: payment)
+
+    handoff = customer.post(
+        "/payments/handoff/123",
+        headers={"X-CSRF-Token": csrf},
+    )
+    handoff_policy = handoff.headers["Content-Security-Policy"]
+    assert handoff.status_code == 200
+    handoff_form_action = next(
+        directive.strip()
+        for directive in handoff_policy.split(";")
+        if directive.strip().startswith("form-action")
+    )
+    assert handoff_form_action == (
+        "form-action 'self' https://sandbox.payfast.co.za https://www.payfast.co.za"
+    )
+    assert 'action="https://sandbox.payfast.co.za/eng/process"' in handoff.text
+    assert 'name="merchant_id" value="test-merchant"' in handoff.text
+    assert '<script src="/static/js/payfast-handoff.js" defer></script>' in handoff.text
+    assert "<script>" not in handoff.text
+
+    responses = [customer.get("/health"), customer.get("/api/config")]
+    responses.append(
+        customer.post("/api/bookings/123/pay", headers={"X-CSRF-Token": csrf})
+    )
+    for response in responses:
+        policy = response.headers["Content-Security-Policy"]
+        form_action = next(
+            directive.strip()
+            for directive in policy.split(";")
+            if directive.strip().startswith("form-action")
+        )
+        assert form_action == "form-action 'self'"
+
+
 def available_slots(client, scenario, service_id=None, staff="any"):
     service_id = service_id or scenario["service_id"]
     response = client.get(
@@ -1139,10 +1182,11 @@ def test_normal_rq_worker_path_delivers_notification_on_linux(app, scenario):
         db.session.commit()
         assert notification_jobs.enqueue_due_notifications() == 1
         queue = notification_jobs._queue()
+        notification_id = notification.id
         db.session.remove()
         assert Worker([queue], connection=queue.connection).work(burst=True)
         with app.app_context():
-            assert db.session.get(Notification, notification.id).status == "sent"
+            assert db.session.get(Notification, notification_id).status == "sent"
 
 
 def _configure_payfast(app, *, validator_response="VALID"):

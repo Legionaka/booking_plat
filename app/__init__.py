@@ -17,11 +17,21 @@ DEPENDENCY_UNAVAILABLE_MESSAGE = (
     "Authentication services are temporarily unavailable. "
     "Please try again."
 )
+BASE_CONTENT_SECURITY_POLICY = (
+    "default-src 'self'; base-uri 'self'; object-src 'none'; "
+    "script-src 'self'; style-src 'self'; style-src-attr 'none'; "
+    "font-src 'self'; img-src 'self'; connect-src 'self'; "
+    "form-action 'self'; frame-ancestors 'none'"
+)
+PAYMENT_HANDOFF_CONTENT_SECURITY_POLICY = BASE_CONTENT_SECURITY_POLICY.replace(
+    "form-action 'self'",
+    "form-action 'self' https://sandbox.payfast.co.za https://www.payfast.co.za",
+)
 
 
 def create_app(test_config: dict[str, object] | None = None) -> Flask:
     """Create and configure the Flask application."""
-    app = Flask(__name__)
+    app = Flask(__name__, static_folder="../static", static_url_path="/static")
     app.config.from_object(Config)
     if test_config:
         app.config.update(test_config)
@@ -121,13 +131,12 @@ def create_app(test_config: dict[str, object] | None = None) -> Flask:
 
     @app.after_request
     def security_headers(response):
-        response.headers.setdefault(
-            "Content-Security-Policy",
-            "default-src 'self'; base-uri 'self'; object-src 'none'; "
-            "script-src 'self'; style-src 'self'; style-src-attr 'none'; "
-            "font-src 'self'; img-src 'self'; connect-src 'self'; "
-            "form-action 'self'; frame-ancestors 'none'",
+        policy = (
+            PAYMENT_HANDOFF_CONTENT_SECURITY_POLICY
+            if request.endpoint == "payments.payfast_handoff"
+            else BASE_CONTENT_SECURITY_POLICY
         )
+        response.headers["Content-Security-Policy"] = policy
         response.headers.setdefault("X-Content-Type-Options", "nosniff")
         response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
         response.headers.setdefault("X-Frame-Options", "DENY")
@@ -145,6 +154,7 @@ def create_app(test_config: dict[str, object] | None = None) -> Flask:
     from app.blueprints.auth import auth_bp
     from app.blueprints.availability import availability_bp
     from app.blueprints.bookings import booking_bp
+    from app.blueprints.dev import dev_bp
     from app.blueprints.insights import insights_bp
     from app.blueprints.payments import payments_bp
 
@@ -153,6 +163,7 @@ def create_app(test_config: dict[str, object] | None = None) -> Flask:
     app.register_blueprint(public_bp)
     app.register_blueprint(availability_bp)
     app.register_blueprint(booking_bp)
+    app.register_blueprint(dev_bp)
     app.register_blueprint(payments_bp)
     app.register_blueprint(insights_bp)
 

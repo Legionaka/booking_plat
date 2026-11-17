@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block page_title %}Frontend foundation · Booking Platform{% endblock %}
+
+{% block content %}
+  <header class="page-header">
+    <div class="page-header__copy">
+      <p class="page-kicker">Frontend foundation / section 13</p>
+      <h1>Dark glass, made tangible.</h1>
+      <p>Tokens and surface samples based on the planning document while Figma is being prepared.</p>
+    </div>
+    <a class="button-sample" href="#glass-depths">Explore the surfaces</a>
+  </header>
+
+  <div class="content-grid">
+    <section class="glass glass--background section-card span-full" aria-labelledby="glass-depths">
+      <div class="section-heading">
+        <p class="eyebrow">01 / Surface system</p>
+        <h2 id="glass-depths">Three glass depths</h2>
+        <p>Each surface keeps a solid Graphite fallback when backdrop blur is unavailable.</p>
+      </div>
+      <div class="glass-grid">
+        <article class="glass glass--background glass-sample">
+          <h3 class="glass-sample__title">Background panel</h3>
+          <p class="glass-sample__detail">Large panel · 24 px blur</p>
+        </article>
+        <article class="glass glass--card glass-sample">
+          <h3 class="glass-sample__title">Card</h3>
+          <p class="glass-sample__detail">Everyday surface · 28 px blur</p>
+        </article>
+        <article class="glass glass--floating glass-sample">
+          <h3 class="glass-sample__title">Floating layer</h3>
+          <p class="glass-sample__detail">Popover or sticky layer · 32 px blur</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="glass glass--card section-card span-half" aria-labelledby="type-scale">
+      <div class="section-heading">
+        <p class="eyebrow">02 / Typography</p>
+        <h2 id="type-scale">Type scale</h2>
+        <p>Display headings use Bricolage Grotesque; interface text uses Instrument Sans.</p>
+      </div>
+      <div class="type-grid">
+        <div class="type-sample"><span class="type-14">Aa · Book a time</span><span class="type-sample__size">14 px</span></div>
+        <div class="type-sample"><span class="type-16">Aa · Book a time</span><span class="type-sample__size">16 px</span></div>
+        <div class="type-sample"><span class="type-20">Aa · Book a time</span><span class="type-sample__size">20 px</span></div>
+        <div class="type-sample"><span class="type-28">Aa · Book a time</span><span class="type-sample__size">28 px</span></div>
+        <div class="type-sample"><span class="type-40">Aa</span><span class="type-sample__size">40 px</span></div>
+        <div class="type-sample"><span class="type-56">Aa</span><span class="type-sample__size">56 px</span></div>
+        <div class="type-sample"><span class="type-72">Aa</span><span class="type-sample__size">72 px</span></div>
+      </div>
+      <p class="tabular-nums">Tabular figures: 09:30 · R1,280 · 1234567890</p>
+    </section>
+
+    <section class="glass glass--card section-card span-half" aria-labelledby="font-specimens">
+      <div class="section-heading">
+        <p class="eyebrow">03 / Local font files</p>
+        <h2 id="font-specimens">Font specimens</h2>
+        <p>Fonts are served by this app from <code>/static/fonts/</code>.</p>
+      </div>
+      <div class="font-grid">
+        <article class="font-sample">
+          <p class="font-sample__preview font-display">A clear day, at a glance.</p>
+          <p class="font-sample__name">Bricolage Grotesque · display</p>
+        </article>
+        <article class="font-sample">
+          <p class="font-sample__preview font-ui">A clear day, at a glance.</p>
+          <p class="font-sample__name">Instrument Sans · interface</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="glass glass--card section-card span-full" aria-labelledby="colour-tokens">
+      <div class="section-heading">
+        <p class="eyebrow">04 / Palette</p>
+        <h2 id="colour-tokens">Colour tokens</h2>
+        <p>Amber, Jade and Rose communicate booking status only.</p>
+      </div>
+      <div class="swatch-grid">
+        <div class="swatch-item"><span class="swatch-chip swatch-obsidian"></span><span class="swatch-label">Obsidian · #050506</span></div>
+        <div class="swatch-item"><span class="swatch-chip swatch-graphite"></span><span class="swatch-label">Graphite · #0E0F12</span></div>
+        <div class="swatch-item"><span class="swatch-chip swatch-glass"></span><span class="swatch-label">Glass · 5% Pearl</span></div>
+        <div class="swatch-item"><span class="swatch-chip swatch-silver-light"></span><span class="swatch-label">Silver light · 8–12%</span></div>
+        <div class="swatch-item"><span class="swatch-chip swatch-steel-light"></span><span class="swatch-label">Steel light · 10–14%</span></div>
+        <div class="swatch-item"><span class="swatch-chip swatch-pearl"></span><span class="swatch-label">Pearl · #F5F6F8</span></div>
+        <div class="swatch-item"><span class="swatch-chip swatch-silver"></span><span class="swatch-label">Silver · #C4C9D4</span></div>
+        <div class="swatch-item"><span class="swatch-chip swatch-fog"></span><span class="swatch-label">Fog · #9298A6</span></div>
+        <div class="swatch-item"><span class="swatch-chip swatch-dim"></span><span class="swatch-label">Dim · #7A8090</span></div>
+        <div class="swatch-item"><span class="swatch-chip swatch-steel"></span><span class="swatch-label">Steel · #8A93A6</span></div>
+        <div class="swatch-item"><span class="swatch-chip swatch-amber"></span><span class="swatch-label">Amber · status</span></div>
+        <div class="swatch-item"><span class="swatch-chip swatch-jade"></span><span class="swatch-label">Jade · status</span></div>
+        <div class="swatch-item"><span class="swatch-chip swatch-rose"></span><span class="swatch-label">Rose · status</span></div>
+      </div>
+      <div class="status-examples" aria-label="Booking status samples">
+        <span class="status-example status-example--amber">◷ Pending</span>
+        <span class="status-example status-example--jade">✓ Confirmed</span>
+        <span class="status-example status-example--rose">× Cancelled</span>
+      </div>
+    </section>
+
+    <section class="glass glass--card section-card span-full" aria-labelledby="interaction-check">
+      <div class="section-heading">
+        <p class="eyebrow">05 / Interaction check</p>
+        <h2 id="interaction-check">Focus and action</h2>
+        <p>Tab to the button to inspect the visible keyboard focus ring. Hover over glass cards for the pointer sheen.</p>
+      </div>
+      <a class="button-sample" href="#colour-tokens">Primary action</a>
+    </section>
+  </div>
+{% endblock %}

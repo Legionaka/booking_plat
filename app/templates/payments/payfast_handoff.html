@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Continue to PayFast</title>
+    <script src="/static/js/payfast-handoff.js" defer></script>
+  </head>
+  <body>
+    <main>
+      <h1>Continue to PayFast</h1>
+      <p>Your secure payment form is ready.</p>
+      <form id="payfast-form" action="{{ action_url }}" method="post">
+        {% for name, value in fields.items() %}
+          <input type="hidden" name="{{ name }}" value="{{ value }}">
+        {% endfor %}
+        <button type="submit">Continue to payment</button>
+      </form>
+    </main>
+  </body>
+</html>

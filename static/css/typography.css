@@ -1,0 +1,76 @@
+h1,
+h2,
+h3,
+h4,
+.display-type {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.035em;
+  line-height: 1.04;
+}
+
+h1,
+.type-40 {
+  font-size: var(--text-40);
+}
+
+h2,
+.type-28 {
+  font-size: var(--text-28);
+}
+
+h3,
+.type-20 {
+  font-size: var(--text-20);
+}
+
+.type-14 {
+  font-size: var(--text-14);
+}
+
+.type-16 {
+  font-size: var(--text-16);
+}
+
+.type-56 {
+  font-size: var(--text-56);
+}
+
+.type-72 {
+  font-size: var(--text-72);
+}
+
+p {
+  max-width: 75ch;
+  margin: 0;
+  color: var(--fog);
+  line-height: 1.6;
+}
+
+.eyebrow,
+.muted-copy {
+  color: var(--dim);
+  font-size: var(--text-14);
+}
+
+.tabular-nums,
+.metric-value,
+time,
+table,
+.type-sample {
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+.font-ui {
+  font-family: var(--font-ui);
+}
+
+strong {
+  color: var(--pearl);
+  font-weight: 600;
+}
