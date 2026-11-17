@@ -1,0 +1,11 @@
+<!doctype html>
+<html><body>
+<h1>Payment received for cancelled booking</h1>
+<p>A payment was received for a booking that is already cancelled.</p>
+<p><strong>{{ business_name }}</strong></p>
+<p>{{ service_name }} with {{ staff_name }} for {{ customer_name }}</p>
+<p>{{ date }} at {{ time }} {{ timezone_name }}</p>
+<p>Amount: {{ price }}</p>
+<p>The booking was not reinstated. A refund is needed. Review this payment in the provider dashboard and contact the customer.</p>
+<p><a href="{{ manage_url }}">Review booking</a></p>
+</body></html>

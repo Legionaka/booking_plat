@@ -1,0 +1,10 @@
+Your booking is confirmed.
+
+Business: {{ business_name }}
+Service: {{ service_name }}
+Staff: {{ staff_name }}
+Date: {{ date }}
+Time: {{ time }} {{ timezone_name }}
+Price: {{ price }}
+
+Manage your booking: {{ manage_url }}

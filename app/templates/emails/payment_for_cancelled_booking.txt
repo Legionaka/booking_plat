@@ -1,0 +1,11 @@
+A payment was received for a booking that is already cancelled.
+
+Business: {{ business_name }}
+Service: {{ service_name }}
+Customer: {{ customer_name }}
+Date: {{ date }}
+Time: {{ time }} {{ timezone_name }}
+Amount: {{ price }}
+
+The booking was not reinstated. A refund is needed. Review this payment in the payment provider dashboard and contact the customer.
+Booking: {{ manage_url }}

@@ -1,0 +1,135 @@
+databases:
+  - name: booking-platform-db
+    databaseName: booking_platform
+    user: booking_platform
+    plan: 0.5c-1g
+    region: frankfurt
+
+services:
+  - type: keyvalue
+    name: booking-platform-redis
+    plan: 256mb
+    region: frankfurt
+    maxmemoryPolicy: noeviction
+    persistenceMode: journal-snapshot
+    ipAllowList: []
+
+  - type: web
+    name: booking-platform-web
+    runtime: docker
+    plan: 0.5c-512mb
+    region: frankfurt
+    dockerfilePath: ./Dockerfile
+    preDeployCommand: flask --app app:create_app db upgrade
+    healthCheckPath: /ready
+    envVars:
+      - fromGroup: booking-platform-production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: booking-platform-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: booking-platform-redis
+          type: keyvalue
+          property: connectionString
+      - key: RATELIMIT_STORAGE_URI
+        fromService:
+          name: booking-platform-redis
+          type: keyvalue
+          property: connectionString
+
+  - type: worker
+    name: booking-platform-worker
+    runtime: docker
+    plan: 0.5c-512mb
+    region: frankfurt
+    dockerfilePath: ./Dockerfile
+    dockerCommand: flask --app app:create_app worker run
+    envVars:
+      - fromGroup: booking-platform-production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: booking-platform-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: booking-platform-redis
+          type: keyvalue
+          property: connectionString
+      - key: RATELIMIT_STORAGE_URI
+        fromService:
+          name: booking-platform-redis
+          type: keyvalue
+          property: connectionString
+
+  - type: worker
+    name: booking-platform-scheduler
+    runtime: docker
+    plan: 0.5c-512mb
+    region: frankfurt
+    dockerfilePath: ./Dockerfile
+    dockerCommand: flask --app app:create_app scheduler run
+    envVars:
+      - fromGroup: booking-platform-production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: booking-platform-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: booking-platform-redis
+          type: keyvalue
+          property: connectionString
+      - key: RATELIMIT_STORAGE_URI
+        fromService:
+          name: booking-platform-redis
+          type: keyvalue
+          property: connectionString
+
+envVarGroups:
+  - name: booking-platform-production
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: SECRET_KEY
+        generateValue: true
+      - key: EMAIL_BACKEND
+        value: smtp
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_USERNAME
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: SMTP_FROM_ADDRESS
+        sync: false
+      - key: SMTP_TLS_MODE
+        value: starttls
+      - key: SESSION_COOKIE_SECURE
+        value: "true"
+      - key: PUBLIC_BASE_URL
+        sync: false
+      - key: BOOKING_MANAGE_BASE_URL
+        sync: false
+      - key: TRUSTED_PROXY_HOPS
+        value: "1"
+      - key: MIGRATE_ON_STARTUP
+        value: "false"
+      - key: DEMO_MODE
+        value: "false"
+      - key: PAYFAST_MERCHANT_ID
+        sync: false
+      - key: PAYFAST_MERCHANT_KEY
+        sync: false
+      - key: PAYFAST_PASSPHRASE
+        sync: false
+      - key: PAYFAST_SANDBOX
+        value: "false"
+      - key: SENTRY_DSN
+        sync: false
+      - key: WEB_WORKERS
+        value: "3"
+

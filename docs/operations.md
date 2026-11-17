@@ -1,0 +1,82 @@
+# Operations
+
+## Release and migrations
+
+Build and deploy one immutable image to web, worker, and scheduler. Before the new web version receives traffic, run the release command:
+
+```sh
+flask --app app:create_app db upgrade
+```
+
+Render runs this as its web service `preDeployCommand`. Do not start the new version if the migration command fails. The PostgreSQL migration integration test applies the migration to an empty dedicated database, checks the tables and indexes, rolls it back, then upgrades it again:
+
+```sh
+pytest -q tests/integration/test_migration.py
+```
+
+For a lower-cost host without a separate release phase, set `MIGRATE_ON_STARTUP=true` on the web container. Its entrypoint runs `flask db upgrade` before Gunicorn; `migrations/env.py` wraps the migration in a PostgreSQL session advisory lock so only one concurrent startup migrates at a time. This is off by default. Keep it off when the host already runs the release command above.
+
+## Render deployment setup
+
+Create a Render Blueprint from `render.yaml`. The web service's `preDeployCommand` applies migrations before the new web process starts; Render requires a paid compute plan for pre-deploy commands. The Blueprint uses a Frankfurt web service, background worker, scheduler, managed PostgreSQL database, and managed Key Value (Redis) service. See [Render's Blueprint reference](https://render.com/docs/blueprint-spec) for current resource fields and plan choices.
+
+Fill the secret placeholders in the `booking-platform-production` environment group: SMTP host/from address (and credentials if required), the public HTTPS app URL for both URL settings, and live PayFast merchant ID/key/passphrase. Render generates `SECRET_KEY`. Add `SENTRY_DSN` only if you have a Sentry project. Set the `TRUSTED_PROXY_HOPS` value to the actual proxy count for the chosen host. Attach a custom domain in Render and update its DNS records at your registrar; replace the README CI badge's `OWNER/REPOSITORY` with the GitHub repository path. Do not commit these values.
+
+## PostgreSQL backup and restore
+
+Use the managed database's scheduled backups and retain a separate encrypted export for recovery. For a manual logical backup from an operator machine with `pg_dump` installed:
+
+```sh
+pg_dump --format=custom --no-owner --file=booking-platform.dump "$DATABASE_URL"
+```
+
+Restore into a new or explicitly approved empty recovery database first, then verify the application before changing the production connection string:
+
+```sh
+createdb booking_platform_restore
+pg_restore --clean --if-exists --no-owner --dbname="$RESTORE_DATABASE_URL" booking-platform.dump
+```
+
+Never restore over production without a reviewed recovery plan. Preserve and protect the dump as sensitive data; it contains customer and payment records.
+
+## Demo data on staging
+
+Confirm the environment is staging, use a dedicated demo owner password, then run:
+
+```sh
+flask --app app:create_app seed-demo
+```
+
+To recreate only the Fade Lab demo business and its related records:
+
+```sh
+flask --app app:create_app seed-demo --reset
+```
+
+The command refuses `APP_ENV=production`. Demo credentials are not suitable for production or shared staging; set `DEMO_OWNER_EMAIL`, `DEMO_OWNER_PASSWORD`, and `DEMO_OWNER_NAME` before use.
+
+## Secret rotation
+
+Rotate `SECRET_KEY` during a planned maintenance window; this invalidates signed verification/reset tokens. Rotate Redis/PostgreSQL credentials at the provider, update the host's secret store and dependent service references together, then redeploy web, worker, and scheduler. Rotate SMTP and PayFast credentials in their provider dashboards before updating `SMTP_PASSWORD` or the `PAYFAST_*` values. Do not print secrets in shell history, logs, or tickets. Recheck `/ready` and send a test email/payment after rotation.
+
+## Workers and scheduler
+
+The Docker Compose services use the same image and separate commands. Locally:
+
+```sh
+docker compose up --build db redis web worker scheduler
+```
+
+For a manual process, run `flask --app app:create_app worker run` and `flask --app app:create_app scheduler run` in separate terminals. Keep one scheduler process active; duplicate passes are safe, but a single scheduler is operationally simpler. Monitor JSON logs for retry failures and inspect notification status in PostgreSQL.
+
+For a small demo where a host charges per service, run the web server, an RQ `SimpleWorker`, and scheduler threads in one process/container:
+
+```sh
+flask --app app:create_app demo run-all
+```
+
+This uses Werkzeug's threaded development server and is for demos only, not production traffic. Provide the same database, Redis, email, and PayFast sandbox settings used by the separate services. Set `DEMO_MODE=true` to let a frontend display its no-real-payments banner; startup refuses that mode if `PAYFAST_SANDBOX=false`.
+
+## Health and incidents
+
+Use `/health` for liveness and `/ready` for PostgreSQL/Redis readiness. Each response includes `X-Request-ID`; use that ID to correlate application JSON logs. Keep raw PayFast ITN payload retention limited as described in `payments.md`.

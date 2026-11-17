@@ -1,0 +1,191 @@
+"""Application factory and Flask application setup."""
+
+from flask import Flask, jsonify, request
+from flask_limiter.errors import RateLimitExceeded
+from redis import Redis
+from redis.exceptions import RedisError
+
+from app.config import DEFAULT_SECRET_KEY, Config
+from app.csrf import install_csrf_protection
+from app.extensions import db, limiter, migrate
+from app.health import health_bp
+from app.observability import configure_observability
+from app.services.email import build_email_service
+from app.sessions import RedisSessionInterface
+
+DEPENDENCY_UNAVAILABLE_MESSAGE = (
+    "Authentication services are temporarily unavailable. "
+    "Please try again."
+)
+
+
+def create_app(test_config: dict[str, object] | None = None) -> Flask:
+    """Create and configure the Flask application."""
+    app = Flask(__name__)
+    app.config.from_object(Config)
+    if test_config:
+        app.config.update(test_config)
+
+    configure_observability(app)
+
+    if app.config.get("APP_ENV") == "production":
+        required = {
+            "SECRET_KEY": app.config.get("SECRET_KEY")
+            not in {DEFAULT_SECRET_KEY, "replace-with-a-long-random-value", ""},
+            "DATABASE_URL": app.config.get("SQLALCHEMY_DATABASE_URI")
+            not in {
+                None,
+                "",
+                "postgresql+psycopg://booking:booking_dev_only@localhost:5433/booking_platform",
+            },
+            "REDIS_URL": app.config.get("REDIS_URL") not in {None, "", "redis://localhost:6379/0"},
+            "RATELIMIT_STORAGE_URI": app.config.get("RATELIMIT_STORAGE_URI")
+            not in {None, "", "redis://localhost:6379/1"},
+            "EMAIL_BACKEND": app.config.get("EMAIL_BACKEND") == "smtp",
+            "SMTP_HOST": bool(app.config.get("SMTP_HOST")),
+            "SMTP_FROM_ADDRESS": bool(app.config.get("SMTP_FROM_ADDRESS")),
+            "SMTP_TLS_MODE": app.config.get("SMTP_TLS_MODE") in {"starttls", "ssl"},
+            "SMTP_CREDENTIALS": not (
+                bool(app.config.get("SMTP_USERNAME"))
+                != bool(app.config.get("SMTP_PASSWORD"))
+            ),
+            "SESSION_COOKIE_SECURE": bool(app.config.get("SESSION_COOKIE_SECURE")),
+            "PUBLIC_BASE_URL": str(app.config.get("PUBLIC_BASE_URL", "")).startswith("https://"),
+            "BOOKING_MANAGE_BASE_URL": str(
+                app.config.get("BOOKING_MANAGE_BASE_URL", "")
+            ).startswith("https://"),
+            "TRUSTED_PROXY_HOPS": int(app.config.get("TRUSTED_PROXY_HOPS", 0)) > 0,
+            "PAYFAST_MERCHANT_ID": bool(app.config.get("PAYFAST_MERCHANT_ID")),
+            "PAYFAST_MERCHANT_KEY": bool(app.config.get("PAYFAST_MERCHANT_KEY")),
+            "PAYFAST_PASSPHRASE": bool(app.config.get("PAYFAST_PASSPHRASE")),
+            "PAYFAST_SANDBOX": not bool(app.config.get("PAYFAST_SANDBOX")),
+        }
+        missing = [name for name, configured in required.items() if not configured]
+        if missing:
+            raise RuntimeError(
+                "Production configuration is missing or unsafe (including PayFast settings): "
+                + ", ".join(missing)
+            )
+
+    if app.config.get("DEMO_MODE") and not app.config.get("PAYFAST_SANDBOX"):
+        raise RuntimeError("DEMO_MODE requires PAYFAST_SANDBOX=true.")
+
+    app.config.setdefault("RATELIMIT_IN_MEMORY_FALLBACK_ENABLED", False)
+
+    db.init_app(app)
+    migrate.init_app(app, db, directory="migrations")
+    redis_client = Redis.from_url(app.config["REDIS_URL"], decode_responses=True)
+    app.extensions["redis"] = redis_client
+    app.extensions["rq_redis"] = Redis.from_url(
+        app.config["REDIS_URL"], decode_responses=False
+    )
+    rate_redis = Redis.from_url(app.config["RATELIMIT_STORAGE_URI"], decode_responses=True)
+    app.extensions["rate_redis"] = rate_redis
+    app.session_interface = RedisSessionInterface(
+        redis_client,
+        key_prefix=app.config.get("SERVER_SESSION_KEY_PREFIX", "booking-platform:session:"),
+        ttl_seconds=app.config["SERVER_SESSION_TTL_SECONDS"],
+    )
+    app.extensions["email_service"] = build_email_service(app.config["EMAIL_BACKEND"])
+    install_csrf_protection(app)
+
+    @app.before_request
+    def require_auth_redis():
+        if request.path.startswith("/api/auth/"):
+            try:
+                app.extensions["redis"].ping()
+                app.extensions["rate_redis"].ping()
+            except RedisError:
+                return jsonify(
+                    {
+                        "error": {
+                            "code": "dependency_unavailable",
+                            "message": DEPENDENCY_UNAVAILABLE_MESSAGE,
+                        }
+                    }
+                ), 503
+
+    limiter.init_app(app)
+
+    proxy_hops = int(app.config.get("TRUSTED_PROXY_HOPS", 0))
+    if proxy_hops:
+        from werkzeug.middleware.proxy_fix import ProxyFix
+
+        app.wsgi_app = ProxyFix(
+            app.wsgi_app,
+            x_for=proxy_hops,
+            x_proto=proxy_hops,
+            x_host=proxy_hops,
+            x_port=proxy_hops,
+        )
+
+    @app.after_request
+    def security_headers(response):
+        response.headers.setdefault(
+            "Content-Security-Policy",
+            "default-src 'self'; base-uri 'self'; object-src 'none'; "
+            "script-src 'self'; style-src 'self'; style-src-attr 'none'; "
+            "font-src 'self'; img-src 'self'; connect-src 'self'; "
+            "form-action 'self'; frame-ancestors 'none'",
+        )
+        response.headers.setdefault("X-Content-Type-Options", "nosniff")
+        response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+        response.headers.setdefault("X-Frame-Options", "DENY")
+        if app.config.get("APP_ENV") == "production":
+            response.headers.setdefault(
+                "Strict-Transport-Security", "max-age=31536000; includeSubDomains"
+            )
+        return response
+
+    # Import models so Flask-Migrate can discover their metadata.
+    from app import models  # noqa: F401
+
+    app.register_blueprint(health_bp)
+    from app.blueprints.admin import admin_bp, public_bp
+    from app.blueprints.auth import auth_bp
+    from app.blueprints.availability import availability_bp
+    from app.blueprints.bookings import booking_bp
+    from app.blueprints.insights import insights_bp
+    from app.blueprints.payments import payments_bp
+
+    app.register_blueprint(auth_bp)
+    app.register_blueprint(admin_bp)
+    app.register_blueprint(public_bp)
+    app.register_blueprint(availability_bp)
+    app.register_blueprint(booking_bp)
+    app.register_blueprint(payments_bp)
+    app.register_blueprint(insights_bp)
+
+    @app.get("/api/config")
+    def public_config():
+        return jsonify({"demo_mode": bool(app.config.get("DEMO_MODE", False))})
+    from app.cli import register_cli
+
+    register_cli(app)
+
+    @app.errorhandler(RateLimitExceeded)
+    def rate_limit_error(_: RateLimitExceeded):
+        return (
+            jsonify(
+                {
+                    "error": {
+                        "code": "rate_limited",
+                        "message": "Too many requests. Please try again later.",
+                    }
+                }
+            ),
+            429,
+        )
+
+    @app.errorhandler(RedisError)
+    def redis_error(_: RedisError):
+        return jsonify(
+            {
+                "error": {
+                    "code": "dependency_unavailable",
+                    "message": DEPENDENCY_UNAVAILABLE_MESSAGE,
+                }
+            }
+        ), 503
+
+    return app

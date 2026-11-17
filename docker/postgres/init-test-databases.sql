@@ -1,0 +1,3 @@
+CREATE DATABASE booking_platform_test;
+CREATE DATABASE booking_platform_migration_test;
+
