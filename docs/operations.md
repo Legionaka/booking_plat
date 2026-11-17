@@ -16,6 +16,22 @@ pytest -q tests/integration/test_migration.py
 
 For a lower-cost host without a separate release phase, set `MIGRATE_ON_STARTUP=true` on the web container. Its entrypoint runs `flask db upgrade` before Gunicorn; `migrations/env.py` wraps the migration in a PostgreSQL session advisory lock so only one concurrent startup migrates at a time. This is off by default. Keep it off when the host already runs the release command above.
 
+## Dependency updates and local verification
+
+`requirements.in` and `requirements-dev.in` contain supported version ranges. `requirements.txt` and `requirements-dev.txt` are the pip-tools compiled locks with hashes; the production Docker build and CI install from those lock files with `--require-hashes`. The supported Pydantic range is `>=2,<3`. The checked-in resolver output currently selects Pydantic 2.14.3, and compilation with that broader range resolves successfully. No package conflict is reproducible from the current inputs, so there is no conflicting package to name; preserve any resolver error output if a future range change fails rather than narrowing the range speculatively.
+
+To update dependencies, edit only the applicable `.in` range file, then compile both lock files with the development toolchain:
+
+```sh
+python -m pip install pip-tools
+python -m piptools compile --upgrade --allow-unsafe --strip-extras --generate-hashes --output-file=requirements.txt requirements.in
+python -m piptools compile --upgrade --allow-unsafe --strip-extras --generate-hashes --output-file=requirements-dev.txt requirements-dev.in
+```
+
+Review the pins and hashes, then run `python scripts/check.py`. Dependabot opens weekly PRs for pip, GitHub Actions, and Docker updates. CI and local verification use the same script so lint, frontend policy, the full test suite, and the production image build stay in sync.
+
+For a local run, start real Postgres and Redis first with `docker compose up -d db redis`, then run `python scripts/check.py`. It installs the hashed development lock, creates the two dedicated test databases if needed, runs Ruff and the frontend policy scanner, runs the full pytest suite, and builds the production Docker image. CI provides Postgres and Redis service containers and invokes the same command.
+
 ## Render deployment setup
 
 Create a Render Blueprint from `render.yaml`. The web service's `preDeployCommand` applies migrations before the new web process starts; Render requires a paid compute plan for pre-deploy commands. The Blueprint uses a Frankfurt web service, background worker, scheduler, managed PostgreSQL database, and managed Key Value (Redis) service. See [Render's Blueprint reference](https://render.com/docs/blueprint-spec) for current resource fields and plan choices.

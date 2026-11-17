@@ -29,6 +29,13 @@ PAYMENT_HANDOFF_CONTENT_SECURITY_POLICY = BASE_CONTENT_SECURITY_POLICY.replace(
 )
 
 
+def content_security_policy_for(endpoint: str | None) -> str:
+    """Return the global CSP, with PayFast form destinations only on its handoff."""
+    if endpoint == "payments.payfast_handoff":
+        return PAYMENT_HANDOFF_CONTENT_SECURITY_POLICY
+    return BASE_CONTENT_SECURITY_POLICY
+
+
 def create_app(test_config: dict[str, object] | None = None) -> Flask:
     """Create and configure the Flask application."""
     app = Flask(__name__, static_folder="../static", static_url_path="/static")
@@ -131,12 +138,9 @@ def create_app(test_config: dict[str, object] | None = None) -> Flask:
 
     @app.after_request
     def security_headers(response):
-        policy = (
-            PAYMENT_HANDOFF_CONTENT_SECURITY_POLICY
-            if request.endpoint == "payments.payfast_handoff"
-            else BASE_CONTENT_SECURITY_POLICY
+        response.headers["Content-Security-Policy"] = content_security_policy_for(
+            request.endpoint
         )
-        response.headers["Content-Security-Policy"] = policy
         response.headers.setdefault("X-Content-Type-Options", "nosniff")
         response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
         response.headers.setdefault("X-Frame-Options", "DENY")

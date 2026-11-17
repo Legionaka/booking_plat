@@ -30,6 +30,7 @@ Planning doc: docs/planning.md
 - Run `python scripts/check_frontend_policy.py` before finishing frontend changes. CI runs this scanner and fails on inline styles, inline scripts, event handlers, or `data:` URIs in templates and static files.
 - No inline `<style>` blocks, style attributes, `setAttribute('style', ...)`, or inline event handlers. Use CSS classes, CSS files, external scripts, and `element.style.setProperty` only for dynamic values.
 - Do not use `data:` URIs for images or CSS backgrounds. SVG charts get their styling from CSS classes. Render QR codes as SVG DOM elements or serve them from an application-owned endpoint.
+- Fonts must be self-hosted from `static/fonts`; frontend assets must not load from third-party hosts.
 - Run `python scripts/check_frontend_policy.py` before finishing frontend changes. CI runs this scanner and fails on inline styles, inline scripts, event handlers, or `data:` URIs in templates and static files.
 
 ## Workflow

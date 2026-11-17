@@ -40,17 +40,5 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
-      - name: Create test databases
-        run: |
-          PGPASSWORD=booking_dev_only createdb -h localhost -U booking booking_platform_test
-          PGPASSWORD=booking_dev_only createdb -h localhost -U booking booking_platform_migration_test
-      - name: Install dependencies
-        run: python -m pip install --require-hashes -r requirements-dev.txt
-      - name: Ruff
-        run: ruff check .
-      - name: Frontend policy scan
-        run: python scripts/check_frontend_policy.py
-      - name: Pytest with PostgreSQL, Redis, and normal Linux RQ worker
-        run: python -m pytest -q
-      - name: Build production Docker image
-        run: docker build --tag booking-platform:ci .
+      - name: Full local CI sequence
+        run: python scripts/check.py
