@@ -20,14 +20,21 @@ def seed_startup_error(seed_enabled: bool, demo_mode: bool, owner_password: str)
     return None
 
 
-_database_url = os.getenv(
-    "DATABASE_URL",
-    "postgresql+psycopg://booking:booking_dev_only@localhost:5433/booking_platform",
+def normalize_database_url(value: str) -> str:
+    """Normalize provider PostgreSQL URL schemes for psycopg 3."""
+    if value.startswith("postgres://"):
+        return "postgresql+psycopg://" + value.removeprefix("postgres://")
+    if value.startswith("postgresql://"):
+        return "postgresql+psycopg://" + value.removeprefix("postgresql://")
+    return value
+
+
+_database_url = normalize_database_url(
+    os.getenv(
+        "DATABASE_URL",
+        "postgresql+psycopg://booking:booking_dev_only@localhost:5433/booking_platform",
+    )
 )
-if _database_url.startswith("postgres://"):
-    _database_url = "postgresql+psycopg://" + _database_url.removeprefix("postgres://")
-elif _database_url.startswith("postgresql://"):
-    _database_url = "postgresql+psycopg://" + _database_url.removeprefix("postgresql://")
 
 
 class Config:

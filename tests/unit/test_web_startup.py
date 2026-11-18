@@ -85,5 +85,55 @@ def test_web_server_starts_after_successful_migration_and_skips_when_disabled():
         lambda: calls.append("migration-and-seed"),
         lambda: calls.append("serve"),
         seed_demo_on_startup=True,
+        seed=lambda: calls.append("seed"),
     )
-    assert calls == ["migration-and-seed", "serve"]
+    assert calls == ["migration-and-seed", "seed", "serve"]
+
+
+def test_startup_runs_migration_then_seed_under_one_lock_before_serve():
+    calls = []
+
+    def lock(callback):
+        calls.append("lock-acquired")
+        callback()
+        calls.append("lock-released")
+
+    startup(
+        True,
+        lambda: calls.append("migration"),
+        lambda: calls.append("serve"),
+        seed_demo_on_startup=True,
+        seed=lambda: calls.append("seed"),
+        lock=lock,
+    )
+
+    assert calls == ["lock-acquired", "migration", "seed", "lock-released", "serve"]
+
+
+def test_seed_subprocess_failure_names_seed_step(monkeypatch):
+    def fail(*_args, **_kwargs):
+        raise subprocess.CalledProcessError(1, ["flask", "seed-demo"])
+
+    monkeypatch.setattr(web_startup.subprocess, "run", fail)
+    with pytest.raises(RuntimeError, match="Demo seed step failed"):
+        web_startup._seed_demo()
+
+
+def test_seed_failure_keeps_web_server_stopped():
+    calls = []
+
+    def fail_seed():
+        calls.append("seed")
+        raise RuntimeError("Demo seed step failed.")
+
+    with pytest.raises(RuntimeError, match="Demo seed step failed"):
+        startup(
+            True,
+            lambda: calls.append("migration"),
+            lambda: calls.append("serve"),
+            seed_demo_on_startup=True,
+            seed=fail_seed,
+            lock=lambda callback: callback(),
+        )
+
+    assert calls == ["migration", "seed"]
