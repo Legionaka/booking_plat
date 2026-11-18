@@ -9,6 +9,7 @@ from app.config import (
     DEFAULT_DEMO_OWNER_PASSWORD,
     DEFAULT_SECRET_KEY,
     Config,
+    is_loopback_url,
     seed_startup_error,
 )
 from app.csrf import install_csrf_protection
@@ -51,6 +52,25 @@ def create_app(test_config: dict[str, object] | None = None) -> Flask:
     configure_observability(app)
 
     if app.config.get("APP_ENV") == "production":
+        for variable, value, service in (
+            (
+                "DATABASE_URL",
+                app.config.get("SQLALCHEMY_DATABASE_URI"),
+                "a managed PostgreSQL connection URL",
+            ),
+            ("REDIS_URL", app.config.get("REDIS_URL"), "a managed Redis connection URL"),
+            (
+                "RATELIMIT_STORAGE_URI",
+                app.config.get("RATELIMIT_STORAGE_URI"),
+                "a managed Redis connection URL",
+            ),
+        ):
+            if is_loopback_url(value):
+                raise RuntimeError(
+                    f"{variable} must be set to {service}; localhost and loopback URLs "
+                    "are not allowed."
+                )
+
         required = {
             "SECRET_KEY": app.config.get("SECRET_KEY")
             not in {DEFAULT_SECRET_KEY, "replace-with-a-long-random-value", ""},
@@ -217,5 +237,27 @@ def create_app(test_config: dict[str, object] | None = None) -> Flask:
                 }
             }
         ), 503
+
+    @app.errorhandler(404)
+    def not_found(error):
+        if request.path.startswith("/api/"):
+            return jsonify({"error": {"code": "not_found", "message": "Not found."}}), 404
+        return error.get_response()
+
+    @app.errorhandler(405)
+    def method_not_allowed(error):
+        if request.path.startswith("/api/"):
+            return (
+                jsonify(
+                    {
+                        "error": {
+                            "code": "method_not_allowed",
+                            "message": "Method not allowed.",
+                        }
+                    }
+                ),
+                405,
+            )
+        return error.get_response()
 
     return app

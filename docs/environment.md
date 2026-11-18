@@ -2,6 +2,8 @@
 
 Production startup validates every required value below before serving requests. Values shown as defaults describe `development`/test operation; use the stated secure production value instead. Put credentials in the host's secret store, never in Git.
 
+`DATABASE_URL` may use the standard `postgres://` or `postgresql://` scheme; the application normalizes either form to `postgresql+psycopg://` for psycopg 3. Production requires a non-loopback managed PostgreSQL URL and managed Redis URLs; unset values and `localhost`, `127.0.0.1`, or `::1` endpoints are rejected with a variable-specific message.
+
 | Variable | Required in production | Default | Purpose |
 | --- | --- | --- | --- |
 | `FLASK_APP` | No | `app:create_app` | Flask CLI application factory target for local commands. |

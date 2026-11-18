@@ -86,3 +86,20 @@ def test_font_faces_exist_and_cover_stylesheet_weights():
         assert "400" in weights, family
         missing = used_weights - weights
         assert not missing, f"{family} lacks stylesheet weights: {missing}"
+
+
+def test_components_page_requires_development_or_demo_mode(app, monkeypatch):
+    monkeypatch.setattr(app.extensions["redis"], "delete", lambda *_args: 0)
+    client = app.test_client()
+    original_env = app.config["APP_ENV"]
+    original_demo_mode = app.config["DEMO_MODE"]
+    try:
+        app.config.update(APP_ENV="production", DEMO_MODE=False)
+        hidden = client.get("/dev/components")
+        assert hidden.status_code == 404
+
+        app.config["DEMO_MODE"] = True
+        visible = client.get("/dev/components")
+        assert visible.status_code == 200
+    finally:
+        app.config.update(APP_ENV=original_env, DEMO_MODE=original_demo_mode)

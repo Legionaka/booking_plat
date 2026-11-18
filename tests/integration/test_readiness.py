@@ -7,11 +7,89 @@ from types import SimpleNamespace
 
 import pytest
 from app import create_app
+from app.config import normalize_database_url
 from app.extensions import db
 from app.observability import JsonFormatter, RequestIdFilter
 from flask import current_app, jsonify
 from redis.exceptions import ConnectionError as RedisConnectionError
 from sqlalchemy.exc import OperationalError
+
+
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [
+        (
+            "postgres://user:password@db.example.test/booking",
+            "postgresql+psycopg://user:password@db.example.test/booking",
+        ),
+        (
+            "postgresql://user:password@db.example.test/booking",
+            "postgresql+psycopg://user:password@db.example.test/booking",
+        ),
+        (
+            "postgresql+psycopg://user:password@db.example.test/booking",
+            "postgresql+psycopg://user:password@db.example.test/booking",
+        ),
+    ],
+)
+def test_database_url_normalizes_postgres_schemes(value, expected):
+    assert normalize_database_url(value) == expected
+
+
+@pytest.mark.parametrize(
+    ("key", "value", "message"),
+    [
+        ("SQLALCHEMY_DATABASE_URI", None, "DATABASE_URL must be set"),
+        (
+            "SQLALCHEMY_DATABASE_URI",
+            "postgresql+psycopg://booking:secret@localhost/booking",
+            "DATABASE_URL must be set",
+        ),
+        (
+            "SQLALCHEMY_DATABASE_URI",
+            "postgresql+psycopg://booking:secret@127.0.0.1/booking",
+            "DATABASE_URL must be set",
+        ),
+        (
+            "SQLALCHEMY_DATABASE_URI",
+            "postgresql+psycopg://booking:secret@[::1]/booking",
+            "DATABASE_URL must be set",
+        ),
+        ("REDIS_URL", None, "REDIS_URL must be set"),
+        ("REDIS_URL", "redis://localhost:6379/0", "REDIS_URL must be set"),
+        ("REDIS_URL", "redis://127.0.0.1:6379/0", "REDIS_URL must be set"),
+        ("REDIS_URL", "redis://[::1]:6379/0", "REDIS_URL must be set"),
+        (
+            "RATELIMIT_STORAGE_URI",
+            "redis://localhost:6379/1",
+            "RATELIMIT_STORAGE_URI must be set",
+        ),
+    ],
+)
+def test_production_rejects_missing_or_loopback_service_urls(key, value, message):
+    valid = {
+        "APP_ENV": "production",
+        "SECRET_KEY": "a-long-production-secret-key",
+        "SQLALCHEMY_DATABASE_URI": "postgresql+psycopg://prod:secret@db.example.test/booking",
+        "REDIS_URL": "redis://redis.example.test:6379/0",
+        "RATELIMIT_STORAGE_URI": "redis://redis.example.test:6379/1",
+        "EMAIL_BACKEND": "smtp",
+        "SESSION_COOKIE_SECURE": True,
+        "PUBLIC_BASE_URL": "https://booking.example.test",
+        "BOOKING_MANAGE_BASE_URL": "https://booking.example.test",
+        "TRUSTED_PROXY_HOPS": 1,
+        "SMTP_HOST": "smtp.example.test",
+        "SMTP_PORT": 587,
+        "SMTP_FROM_ADDRESS": "booking@example.test",
+        "SMTP_TLS_MODE": "starttls",
+        "PAYFAST_MERCHANT_ID": "merchant-id",
+        "PAYFAST_MERCHANT_KEY": "merchant-key",
+        "PAYFAST_PASSPHRASE": "merchant-passphrase",
+        "PAYFAST_SANDBOX": False,
+        "DEMO_OWNER_PASSWORD": "A-unique-production-demo-password",
+    }
+    with pytest.raises(RuntimeError, match=message):
+        create_app({**valid, key: value})
 
 
 @pytest.mark.parametrize(
@@ -93,6 +171,73 @@ def test_ready_fails_when_redis_is_unreachable(client, app, monkeypatch):
     response = client.get("/ready")
     assert response.status_code == 503
     assert response.json == {"status": "unhealthy"}
+
+
+def test_health_public_config_and_static_skip_session_redis_when_unavailable(
+    client, app, monkeypatch
+):
+    calls = []
+
+    def unavailable(*_args, **_kwargs):
+        calls.append("redis")
+        raise RedisConnectionError("redis offline")
+
+    for client_name in ("redis", "rate_redis"):
+        redis_client = app.extensions[client_name]
+        for method_name in ("get", "set", "delete", "ping"):
+            monkeypatch.setattr(redis_client, method_name, unavailable)
+
+    responses = [
+        client.get("/health"),
+        client.get("/api/config"),
+        client.get("/static/css/base.css"),
+    ]
+
+    assert [response.status_code for response in responses] == [200, 200, 200]
+    assert calls == []
+
+
+def test_ready_auth_and_session_routes_fail_closed_when_redis_is_unavailable(
+    client, app, monkeypatch
+):
+    def unavailable(*_args, **_kwargs):
+        raise RedisConnectionError("redis offline")
+
+    monkeypatch.setattr(app.extensions["redis"], "ping", unavailable)
+    monkeypatch.setattr(app.extensions["redis"], "get", unavailable)
+    monkeypatch.setattr(app.extensions["redis"], "delete", unavailable)
+    monkeypatch.setattr(app.extensions["rate_redis"], "ping", unavailable)
+
+    assert client.get("/ready").status_code == 503
+    auth = client.get("/api/auth/me")
+    assert auth.status_code == 503
+    assert auth.json["error"]["code"] == "dependency_unavailable"
+    session_route = client.get("/api/me/bookings")
+    assert session_route.status_code == 503
+    assert session_route.json["error"]["code"] == "dependency_unavailable"
+
+    missing_api = client.get("/api/not-a-route")
+    assert missing_api.status_code == 404
+    assert missing_api.json["error"]["code"] == "not_found"
+    wrong_method = client.post("/api/config")
+    assert wrong_method.status_code == 405
+    assert wrong_method.json["error"]["code"] == "method_not_allowed"
+
+
+def test_unknown_api_paths_use_json_404_and_405_while_other_paths_stay_html(client):
+    missing = client.get("/api/does-not-exist")
+    assert missing.status_code == 404
+    assert missing.json == {"error": {"code": "not_found", "message": "Not found."}}
+
+    wrong_method = client.post("/api/config")
+    assert wrong_method.status_code == 405
+    assert wrong_method.json == {
+        "error": {"code": "method_not_allowed", "message": "Method not allowed."}
+    }
+
+    html_missing = client.get("/does-not-exist")
+    assert html_missing.status_code == 404
+    assert html_missing.content_type.startswith("text/html")
 
 
 def test_security_headers_and_production_hsts(client, app):

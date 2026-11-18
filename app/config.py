@@ -1,6 +1,8 @@
 """Environment-backed application configuration."""
 
 import os
+from ipaddress import ip_address
+from urllib.parse import urlsplit
 
 DEFAULT_SECRET_KEY = "local-development-only"
 DEFAULT_DEMO_OWNER_PASSWORD = "DemoOnly-ChangeMe-2026!"
@@ -27,6 +29,24 @@ def normalize_database_url(value: str) -> str:
     if value.startswith("postgresql://"):
         return "postgresql+psycopg://" + value.removeprefix("postgresql://")
     return value
+
+
+def is_loopback_url(value: str | None) -> bool:
+    """Treat missing, malformed, and loopback service URLs as unsafe for production."""
+    if not value:
+        return True
+    try:
+        hostname = urlsplit(value).hostname
+    except ValueError:
+        return True
+    if not hostname:
+        return True
+    if hostname.lower() == "localhost":
+        return True
+    try:
+        return ip_address(hostname).is_loopback
+    except ValueError:
+        return False
 
 
 _database_url = normalize_database_url(

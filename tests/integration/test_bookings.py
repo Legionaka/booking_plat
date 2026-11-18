@@ -1620,6 +1620,9 @@ def test_production_startup_requires_payfast_credentials(app):
             {
                 "APP_ENV": "production",
                 "SECRET_KEY": "strong-test-secret",
+                "SQLALCHEMY_DATABASE_URI": "postgresql+psycopg://test:secret@db.example.test/booking",
+                "REDIS_URL": "redis://redis.example.test:6379/0",
+                "RATELIMIT_STORAGE_URI": "redis://redis.example.test:6379/1",
                 "EMAIL_BACKEND": "smtp",
                 "SESSION_COOKIE_SECURE": True,
                 "PAYFAST_MERCHANT_ID": "",

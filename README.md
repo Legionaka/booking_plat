@@ -82,5 +82,6 @@ Dependency ranges live in `requirements.in` and `requirements-dev.in`; the hashe
 ## Live demo and screenshots
 
 - **Live demo:** `[Deployment URL to be added]`
+- The demo runs in PayFast sandbox mode; no real payments are processed.
 - **Screenshots:** `[ product screenshots here]`
 
