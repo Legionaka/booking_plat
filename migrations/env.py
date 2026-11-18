@@ -40,7 +40,12 @@ def run_migrations_online() -> None:
         poolclass=pool.NullPool,
     )
     with connectable.connect() as connection:
-        use_advisory_lock = os.getenv("MIGRATE_ON_STARTUP", "false").lower() in {
+        startup_lock_enabled = os.getenv("MIGRATE_ON_STARTUP", "false").lower() in {
+            "1",
+            "true",
+            "yes",
+        }
+        seed_demo_on_startup = os.getenv("SEED_DEMO_ON_STARTUP", "false").lower() in {
             "1",
             "true",
             "yes",
@@ -53,7 +58,18 @@ def run_migrations_online() -> None:
             with context.begin_transaction():
                 context.run_migrations()
 
-        run_with_advisory_lock(connection, migrate, use_advisory_lock)
+            if seed_demo_on_startup and has_app_context():
+                if not current_app.config.get("SEED_DEMO_ON_STARTUP"):
+                    raise RuntimeError("SEED_DEMO_ON_STARTUP configuration is inconsistent.")
+                from app.services.demo_seed import seed_demo
+
+                seed_demo()
+
+        run_with_advisory_lock(
+            connection,
+            migrate,
+            startup_lock_enabled or seed_demo_on_startup,
+        )
 
 
 if context.is_offline_mode():

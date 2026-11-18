@@ -38,6 +38,7 @@ from sqlalchemy.exc import OperationalError
         ("PAYFAST_MERCHANT_KEY", "", "PAYFAST_MERCHANT_KEY"),
         ("PAYFAST_PASSPHRASE", "", "PAYFAST_PASSPHRASE"),
         ("PAYFAST_SANDBOX", True, "PAYFAST_SANDBOX"),
+        ("DEMO_OWNER_PASSWORD", "DemoOnly-ChangeMe-2026!", "DEMO_OWNER_PASSWORD"),
     ],
 )
 def test_each_required_production_setting_is_guarded(key, invalid, message_key):
@@ -60,6 +61,7 @@ def test_each_required_production_setting_is_guarded(key, invalid, message_key):
         "PAYFAST_MERCHANT_KEY": "merchant-key",
         "PAYFAST_PASSPHRASE": "merchant-passphrase",
         "PAYFAST_SANDBOX": False,
+        "DEMO_OWNER_PASSWORD": "A-unique-production-demo-password",
     }
     with pytest.raises(RuntimeError, match=message_key):
         create_app({**valid, key: invalid})

@@ -5,7 +5,12 @@ from flask_limiter.errors import RateLimitExceeded
 from redis import Redis
 from redis.exceptions import RedisError
 
-from app.config import DEFAULT_SECRET_KEY, Config
+from app.config import (
+    DEFAULT_DEMO_OWNER_PASSWORD,
+    DEFAULT_SECRET_KEY,
+    Config,
+    seed_startup_error,
+)
 from app.csrf import install_csrf_protection
 from app.extensions import db, limiter, migrate
 from app.health import health_bp
@@ -76,6 +81,8 @@ def create_app(test_config: dict[str, object] | None = None) -> Flask:
             "PAYFAST_MERCHANT_KEY": bool(app.config.get("PAYFAST_MERCHANT_KEY")),
             "PAYFAST_PASSPHRASE": bool(app.config.get("PAYFAST_PASSPHRASE")),
             "PAYFAST_SANDBOX": not bool(app.config.get("PAYFAST_SANDBOX")),
+            "DEMO_OWNER_PASSWORD": bool(app.config.get("DEMO_OWNER_PASSWORD"))
+            and app.config.get("DEMO_OWNER_PASSWORD") != DEFAULT_DEMO_OWNER_PASSWORD,
         }
         missing = [name for name, configured in required.items() if not configured]
         if missing:
@@ -86,6 +93,14 @@ def create_app(test_config: dict[str, object] | None = None) -> Flask:
 
     if app.config.get("DEMO_MODE") and not app.config.get("PAYFAST_SANDBOX"):
         raise RuntimeError("DEMO_MODE requires PAYFAST_SANDBOX=true.")
+
+    seed_error = seed_startup_error(
+        bool(app.config.get("SEED_DEMO_ON_STARTUP")),
+        bool(app.config.get("DEMO_MODE")),
+        str(app.config.get("DEMO_OWNER_PASSWORD", "")),
+    )
+    if seed_error:
+        raise RuntimeError(seed_error)
 
     app.config.setdefault("RATELIMIT_IN_MEMORY_FALLBACK_ENABLED", False)
 

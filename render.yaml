@@ -118,8 +118,12 @@ envVarGroups:
         value: "1"
       - key: MIGRATE_ON_STARTUP
         value: "false"
+      - key: SEED_DEMO_ON_STARTUP
+        value: "false"
       - key: DEMO_MODE
         value: "false"
+      - key: DEMO_OWNER_PASSWORD
+        generateValue: true
       - key: PAYFAST_MERCHANT_ID
         sync: false
       - key: PAYFAST_MERCHANT_KEY

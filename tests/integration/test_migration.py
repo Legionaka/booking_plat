@@ -53,11 +53,19 @@ def test_initial_migration_upgrades_and_rolls_back(migration_url):
         engine.dispose()
 
 
-def test_second_startup_waits_for_lock_then_leaves_head_unchanged(migration_url, monkeypatch):
+@pytest.mark.parametrize(
+    ("lock_environment", "lock_value"),
+    [("MIGRATE_ON_STARTUP", "true"), ("SEED_DEMO_ON_STARTUP", "true")],
+)
+def test_second_startup_waits_for_lock_then_leaves_head_unchanged(
+    migration_url, monkeypatch, lock_environment, lock_value
+):
     config = Config("migrations/alembic.ini")
     config.set_main_option("sqlalchemy.url", migration_url.replace("%", "%%"))
     command.upgrade(config, "head")
-    monkeypatch.setenv("MIGRATE_ON_STARTUP", "true")
+    monkeypatch.setenv("MIGRATE_ON_STARTUP", "false")
+    monkeypatch.setenv("SEED_DEMO_ON_STARTUP", "false")
+    monkeypatch.setenv(lock_environment, lock_value)
     engine = create_engine(migration_url)
     with engine.connect() as connection:
         revision_before = connection.execute(

@@ -1,4 +1,4 @@
-"""Optional PostgreSQL advisory lock around Alembic migrations."""
+"""Optional PostgreSQL advisory lock around startup migrations and demo seeding."""
 
 from sqlalchemy import text
 
@@ -6,7 +6,7 @@ MIGRATION_ADVISORY_LOCK_ID = 781245901
 
 
 def run_with_advisory_lock(connection, migration_callback, enabled: bool) -> None:
-    """Run migrations under a session lock when startup migration mode is enabled."""
+    """Run the startup callback under a session lock when enabled."""
     if enabled:
         connection.execute(
             text("SELECT pg_advisory_lock(:lock_id)"),

@@ -3,6 +3,23 @@
 import os
 
 DEFAULT_SECRET_KEY = "local-development-only"
+DEFAULT_DEMO_OWNER_PASSWORD = "DemoOnly-ChangeMe-2026!"
+
+
+def seed_startup_error(seed_enabled: bool, demo_mode: bool, owner_password: str) -> str | None:
+    """Describe unsafe startup-seed configurations before any service starts."""
+    if seed_enabled and not demo_mode:
+        return "SEED_DEMO_ON_STARTUP=true requires DEMO_MODE=true."
+    if seed_enabled and (
+        not owner_password or owner_password == DEFAULT_DEMO_OWNER_PASSWORD
+    ):
+        return (
+            "SEED_DEMO_ON_STARTUP requires a non-default DEMO_OWNER_PASSWORD "
+            "set through the environment."
+        )
+    return None
+
+
 _database_url = os.getenv(
     "DATABASE_URL",
     "postgresql+psycopg://booking:booking_dev_only@localhost:5433/booking_platform",
@@ -74,7 +91,7 @@ class Config:
     PAYMENT_HOLD_MINUTES = int(os.getenv("PAYMENT_HOLD_MINUTES", "20"))
     PUBLIC_BASE_URL = os.getenv("PUBLIC_BASE_URL", "http://localhost:5000")
     DEMO_OWNER_EMAIL = os.getenv("DEMO_OWNER_EMAIL", "owner@fade-lab.demo")
-    DEMO_OWNER_PASSWORD = os.getenv("DEMO_OWNER_PASSWORD", "DemoOnly-ChangeMe-2026!")
+    DEMO_OWNER_PASSWORD = os.getenv("DEMO_OWNER_PASSWORD", DEFAULT_DEMO_OWNER_PASSWORD)
     DEMO_OWNER_NAME = os.getenv("DEMO_OWNER_NAME", "Fade Lab Owner")
     WEB_WORKERS = int(os.getenv("WEB_WORKERS", "3"))
     PORT = int(os.getenv("PORT", "5000"))
@@ -90,6 +107,11 @@ class Config:
     SMTP_TIMEOUT_SECONDS = int(os.getenv("SMTP_TIMEOUT_SECONDS", "10"))
     DEMO_MODE = os.getenv("DEMO_MODE", "false").lower() in {"1", "true", "yes"}
     MIGRATE_ON_STARTUP = os.getenv("MIGRATE_ON_STARTUP", "false").lower() in {
+        "1",
+        "true",
+        "yes",
+    }
+    SEED_DEMO_ON_STARTUP = os.getenv("SEED_DEMO_ON_STARTUP", "false").lower() in {
         "1",
         "true",
         "yes",

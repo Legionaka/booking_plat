@@ -16,6 +16,10 @@ pytest -q tests/integration/test_migration.py
 
 For a lower-cost host without a separate release phase, set `MIGRATE_ON_STARTUP=true` on the web container. Its entrypoint runs `flask db upgrade` before Gunicorn; `migrations/env.py` wraps the migration in a PostgreSQL session advisory lock so only one concurrent startup migrates at a time. This is off by default. Keep it off when the host already runs the release command above.
 
+For a demo environment that should populate itself at each deployment, set `SEED_DEMO_ON_STARTUP=true` and `DEMO_MODE=true`. The web entrypoint runs the Alembic upgrade command even when `MIGRATE_ON_STARTUP=false`; the migration environment seeds only after migrations complete and keeps the same PostgreSQL advisory lock held through the seed. Other web instances wait for that lock before migrating or seeding. The seed is idempotent, so a restart reuses the Fade Lab records without duplicating them. The seed flag alone is rejected and Gunicorn is not started.
+
+Set `DEMO_OWNER_PASSWORD` explicitly in the host's environment/secret store before enabling startup seeding. Do not use the repository's local demo password in production; keep `SEED_DEMO_ON_STARTUP=false` there. Production startup rejects the repository default, and the demo seed is intended for sandbox/demo environments only.
+
 ## Dependency updates and local verification
 
 `requirements.in` and `requirements-dev.in` contain supported version ranges. `requirements.txt` and `requirements-dev.txt` are the pip-tools compiled locks with hashes; the production Docker build and CI install from those lock files with `--require-hashes`. The supported Pydantic range is `>=2,<3`. The checked-in resolver output currently selects Pydantic 2.14.3, and compilation with that broader range resolves successfully. No package conflict is reproducible from the current inputs, so there is no conflicting package to name; preserve any resolver error output if a future range change fails rather than narrowing the range speculatively.

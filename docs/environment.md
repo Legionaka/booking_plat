@@ -27,6 +27,7 @@ Production startup validates every required value below before serving requests.
 | `SMTP_TLS_MODE` | Yes (`starttls` or `ssl`) | `starttls` | Use SMTP STARTTLS on the configured port (typically 587) or implicit SSL (typically 465). TLS cannot be disabled in production. |
 | `SMTP_TIMEOUT_SECONDS` | No | `10` | SMTP connection timeout. |
 | `MIGRATE_ON_STARTUP` | No | `false` | When true, the web container applies Alembic migrations before starting Gunicorn, under a PostgreSQL advisory lock. |
+| `SEED_DEMO_ON_STARTUP` | No (`false` in production) | `false` | When true, the web entrypoint runs migrations and seeds Fade Lab under the same PostgreSQL advisory lock. Requires `DEMO_MODE=true` and a non-default `DEMO_OWNER_PASSWORD` environment value. |
 | `DEMO_MODE` | No | `false` | Public demo flag returned from `GET /api/config`; cannot be true while PayFast live mode is selected. |
 | `SESSION_COOKIE_SECURE` | Yes (`true`) | `false` | Restricts session cookies to HTTPS; keep false only for local HTTP development. |
 | `SERVER_SESSION_TTL_SECONDS` | No | `86400` | Server-side session lifetime. |
@@ -63,7 +64,9 @@ Production startup validates every required value below before serving requests.
 | `PAYMENT_HOLD_MINUTES` | No | `20` | Payment hold extension. |
 | `PUBLIC_BASE_URL` | Yes, HTTPS origin | `http://localhost:5000` | Public origin used to construct PayFast callback URLs. |
 | `DEMO_OWNER_EMAIL` | No | `owner@fade-lab.demo` | Local demo seed owner login. |
-| `DEMO_OWNER_PASSWORD` | No | `DemoOnly-ChangeMe-2026!` | Local demo seed password; demo only. |
+| `DEMO_OWNER_PASSWORD` | Yes, unique environment secret | `DemoOnly-ChangeMe-2026!` (local only) | Demo owner password. Production rejects the repository default. Startup seeding also requires an explicit non-default value. |
 | `DEMO_OWNER_NAME` | No | `Fade Lab Owner` | Local demo seed owner display name. |
 
 Production also requires a non-default `SECRET_KEY`, an SMTP backend with TLS, HTTPS public URLs, a non-sandbox PayFast configuration, and an explicitly configured `TRUSTED_PROXY_HOPS` greater than zero. Set that value to the exact number of trusted reverse proxy hops for the selected host. If it is too high, a client may spoof `X-Forwarded-For`; that can undermine IP-based rate limits and client-IP logging. If it is too low, rate limits may key on the proxy address and affect multiple users together. Zero ignores forwarded headers and is the safe local default, but production startup rejects it. `SENTRY_DSN` and SMTP authentication credentials are optional; configure both SMTP credentials or neither.
+
+Keep `SEED_DEMO_ON_STARTUP=false` in production. If using startup seeding in a demo environment, set both `SEED_DEMO_ON_STARTUP=true` and `DEMO_MODE=true`, and supply a unique `DEMO_OWNER_PASSWORD` through the hosting environment's secret store. The web entrypoint will refuse to start if the flags disagree or the repository's demo password is still configured.
