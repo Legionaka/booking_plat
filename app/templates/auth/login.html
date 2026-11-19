@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% from "components/glass_panel.html" import panel %}
+{% block page_title %}Sign in | Booking Platform{% endblock %}
+{% block page_shell_class %}page-shell--auth{% endblock %}
+{% block content %}
+<div class="auth-layout" data-page="login" data-next="{{ next_path or '' }}" data-business="{{ business_slug or '' }}" data-portal="{{ 'business' if portal else 'customer' }}">
+  <section class="auth-column" aria-label="Account access">
+    <a class="auth-brand" href="/">{{ business_name or ('Business portal' if portal else 'Fade Lab Barbers') }}</a>
+    {% call panel() %}
+      <h1 id="page-heading">{{ 'Sign in to ' ~ business_name if business_name else ('Sign in to your business' if portal else 'Sign in to Fade Lab Barbers') }}</h1>
+      <p class="auth-subtitle">{{ 'For owners and staff.' if portal else 'Your bookings, all in one place.' }}</p>
+      {% include "components/alert.html" %}
+      <form data-auth-form novalidate>
+        {% set field_id='login-email' %}{% set label='Email' %}{% set name='email' %}{% set type='email' %}{% set autocomplete='username' %}{% set placeholder='alex@example.com' %}{% set help='' %}{% include "components/text_input.html" %}
+        {% set field_id='login-password' %}{% set label='Password' %}{% set name='password' %}{% set autocomplete='current-password' %}{% include "components/password_input.html" %}
+        {% set label='Sign in' %}{% set type='submit' %}{% set primary=true %}{% include "components/button.html" %}
+      </form>
+      <nav class="auth-links" aria-label="Sign in options">
+        <a class="button button--secondary" href="/auth/forgot">Forgot password</a>
+        {% if not portal %}<a class="button button--secondary" href="/auth/register">Create account</a>{% endif %}
+      </nav>
+      <p class="auth-note" data-verification-link hidden>Your email isn’t verified yet. <a href="/auth/verify">Verify your email and resend the message</a>.</p>
+      <button class="text-button" data-resend-from-login hidden type="button">Resend verification email</button>
+      <p class="auth-footnote">Use the email you registered with. Passwords are case-sensitive.</p>
+    {% endcall %}
+  </section>
+  <aside class="glass glass--background ambient-panel" aria-label="Product preview">
+    {% if portal %}<p class="ambient-panel__eyebrow">BUSINESS PORTAL</p>{% endif %}
+    <h2 {% if not portal %}data-business-name{% endif %}>{{ 'A full day. A clear head.' if portal else (business_name or 'Fade Lab Barbers') }}</h2>
+    <p class="ambient-panel__copy">{{ 'Live availability' if portal else 'Johannesburg · Your neighbourhood. Your time.' }}</p>
+    <p class="ambient-panel__tagline">{{ 'Next open · 14:30' if portal else 'Your next fresh start.' }}</p>
+    {% if not portal %}<ul class="ambient-panel__services" aria-label="Popular services"><li><span>Fade</span><span>R180</span></li><li><span>Beard trim</span><span>R90</span></li><li><span>Fade and beard</span><span>R250</span></li></ul>{% endif %}
+    <div class="availability-preview" aria-label="Availability this week">
+      <p class="availability-preview__title">Open chairs this week</p>
+      <div class="availability-preview__days">
+        {% for day in ['Sat','Sun','Mon','Tue','Wed','Thu','Fri'] %}
+        <div class="availability-preview__day"><span class="availability-preview__bar" aria-hidden="true"></span><span>{{ day }}</span></div>
+        {% endfor %}
+      </div>
+      <p class="availability-preview__foot">Saturday 14 Nov · Johannesburg</p>
+    </div>
+    {% if portal %}<div class="appointment-preview"><p class="appointment-preview__label"><span class="appointment-preview__dot" aria-hidden="true"></span>In the chair</p><p class="appointment-preview__item">14:00 · Kabelo · Fade with Sipho</p></div>{% endif %}
+    <p class="ambient-panel__foot" data-business-location>{{ business_name or 'Fade Lab Barbers' }} · Johannesburg</p>
+  </aside>
+</div>
+{% endblock %}
+{% block page_scripts %}
+<script src="{{ url_for('static', filename='js/api.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/pages/login.js') }}" defer></script>
+{% endblock %}

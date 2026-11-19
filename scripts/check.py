@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import argparse
 import os
 import subprocess
 import sys
@@ -44,6 +45,13 @@ def ensure_test_databases() -> None:
 
 
 def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--e2e",
+        action="store_true",
+        help="run the optional Chromium authentication browser smoke test",
+    )
+    args = parser.parse_args()
     run(
         [
             sys.executable,
@@ -59,7 +67,19 @@ def main() -> int:
     ensure_test_databases()
     run([sys.executable, "-m", "ruff", "check", "."])
     run([sys.executable, "scripts/check_frontend_policy.py"])
-    run([sys.executable, "-m", "pytest", "-q"])
+    run(
+        [
+            sys.executable,
+            "-m",
+            "pytest",
+            "-q",
+            "-p",
+            "no:cacheprovider",
+            "--ignore=tests/e2e",
+        ]
+    )
+    if args.e2e:
+        run([sys.executable, "scripts/run_e2e.py"])
     run(["docker", "build", "--tag", "booking-platform:ci", "."])
     return 0
 

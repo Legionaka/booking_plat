@@ -1,0 +1,5 @@
+{% macro panel(extra_class='') -%}
+<section class="glass glass--card auth-card {{ extra_class }}" aria-labelledby="page-heading">
+  {{ caller() }}
+</section>
+{%- endmacro %}

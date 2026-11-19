@@ -3,32 +3,35 @@
 ## Source of truth
 
 - Figma is the source of truth for visual design. The product plan is the source of truth for behavior, data, and business rules.
-- Project Figma file: [Booking platform design](https://www.figma.com/design/u1iNRYeax7OcV1qGksKGcn/Untitled?node-id=0-1) (link currently recorded in `AGENTS.md`).
-- The planning document still contains placeholder page names. Confirm the page and frame names against Figma before implementing a screen; do not infer missing visual details from the placeholders.
+- Project Figma file: [Booking platform design](https://www.figma.com/design/u1iNRYeax7OcV1qGksKGcn/Untitled?node-id=20-837).
+- The file is readable. Design system page: `Design system`; auth page: `F • Authentication and onboarding`.
 - If Figma and the product plan differ visually, follow Figma. If they differ on behavior, follow the product plan and record the discrepancy here.
 
 ## Figma organization
 
-The plan asks for frames named `Portal / Screen / State`, with colors, type, radius, and blur represented as Figma variables. The following page names and frame IDs need to be filled in after inspecting the file:
+The file has these confirmed pages:
 
 | Area | Figma page/frame | Status |
 | --- | --- | --- |
-| Design system: tokens, glass depths, slot states, components, chart styles | TBD | Verify in Figma |
-| Customer portal | TBD | Verify in Figma |
-| Owner and staff portal | TBD | Verify in Figma |
-| Platform admin | TBD | Verify in Figma |
-| Authentication and onboarding | TBD | Verify in Figma |
-| System states and emails | TBD | Verify in Figma |
+| Design system | `Design system` page; `Fade Lab • Design system` frame, node `2:121` | Verified; color tokens, ambient glass, typography, interactive components |
+| Customer portal | `Customer • Book in a minute` and `Customer • Desktop and tablet` | Verified; outside F1 |
+| Owner and staff portal | `Owner • Live control room` and `Responsive • Owner and system states` | Verified; outside F1 |
+| Platform admin | `Platform admin • Operations` | Verified; admin sign-in frame has no matching backend role/route |
+| Authentication and onboarding | `F • Authentication and onboarding`, node `20:837` | Verified; full 181-frame index in [auth-frame-inventory.md](auth-frame-inventory.md) |
+| Emails | `Emails • Transactional` | Verified; outside F1 |
 
 ## Screen-to-route map
 
-This map follows the product plan's screen inventory. Exact frame names, node links, dimensions, and state coverage remain to be checked against Figma.
+F1 route mapping and implemented template:
 
 | Area | Route(s) | Template group | Main API calls |
 | --- | --- | --- | --- |
 | Customer booking | `/b/<slug>`, `/b/<slug>/book`, `/b/<slug>/book/time`, `/b/<slug>/book/pay`, `/b/<slug>/book/confirmed/<id>`, `/b/<slug>/waitlist` | `customer/` | Public services, availability slots, booking creation, payments |
 | Customer account | `/account/bookings`, `/account/bookings/<id>`, `/account/security` | `customer/`, `auth/` | Customer bookings, booking updates, sessions |
 | Authentication | `/auth/login`, `/auth/register`, `/auth/verify`, `/auth/forgot`, `/auth/reset/<token>`, `/auth/invite/<token>`, `/auth/2fa` | `auth/` | Authentication endpoints |
+| F1 customer/business auth | `/auth/login`, `/auth/register`, `/auth/verify`, `/auth/forgot`, `/auth/forgot/sent`, `/auth/reset` | `auth/login.html`, `register.html`, `verify.html`, `forgot.html`, `forgot_sent.html`, `reset.html` | CSRF, register, login, me, verify, resend, forgot, reset |
+| F1 signed-in placeholders | `/account`, `/app` | `auth/placeholder.html` plus `components/session_expired.html` | me, logout |
+| F1 component sheet | `/dev/components` | `dev/components.html` plus `components/` partials | None |
 | Owner onboarding | `/app/onboarding` | `auth/` | Business, services, staff, and hours management |
 | Owner and staff | `/app`, `/app/week`, `/app/services`, `/app/staff`, `/app/hours`, `/app/customers`, `/app/payments`, `/app/analytics`, `/app/settings`, `/app/audit` | `owner/` | Admin endpoints, bookings, analytics |
 | Platform admin | `/platform/businesses`, `/platform/businesses/<id>`, `/platform/health` | `platform/` | Platform endpoints |
@@ -55,7 +58,20 @@ The plan's starting theme is Obsidian `#050506`, Graphite `#0E0F12`, Pearl `#F5F
 
 ### Current implementation checkpoint
 
-The Figma file is not ready for implementation yet. The initial CSS tokens and frontend foundation therefore follow section 13 of `docs/planning.md`. Reconcile the palette, glass fills, ambient light, typefaces, type scale, radii, blur, and spacing tokens with the approved Figma variables and frames before treating these values as final.
+F1 values have been reconciled with Figma. See [design-tokens.md](design-tokens.md) for the variable values and exact CSS changes. The backend rule is 10 to 128 characters; the Figma password helper copy needs to change from 12 to 10 characters.
+
+### F1 deferred states
+
+Do not implement guest checkout, social/Google sign-in, staff invite acceptance, two-step verification or backup codes, session listing, or platform-admin sign-in in F1. The backend has no matching route/role for these screens. Lockout has no distinct backend response today; the shared login error handles supported responses. Each frame is listed with route/template status in [auth-frame-inventory.md](auth-frame-inventory.md).
+
+Figma uses the layer name “Violet light field,” bound to a silver monochrome tint (`#c9ced81a`). It is represented as a silver ambient field per the product palette. The pointer-following sheen was removed from glass surfaces, buttons, and slot keys; the slow ambient background drift and standard hover/press states remain. Blur, static gradients, and shadows use external CSS with solid Graphite fallbacks and reduced-motion behavior. No auth artwork requires imported assets or CSP exceptions.
+
+## Responsive auth layout decisions
+
+- The auth canvas is capped at 1920 px on ultra-wide screens. Its desktop columns remain balanced; the form card stays near Figma's 440 px width.
+- At 820 px and below the auth view is a single column and hides the ambient preview. At 390 px the card is 366 px wide to satisfy the minimum tested width while keeping 12 px side gutters; Figma's sample is 358 px wide.
+- The registration frame has no right-side preview, so its ambient panel is omitted. Customer sign-in keeps the Figma service list and availability chart; the business portal uses its next-appointment preview.
+- At desktop heights below 960 px the ambient content compacts so the chart and footer remain visible. The 820 × 1180 layout uses the centered single-column form pattern.
 
 ## Implementation rules
 

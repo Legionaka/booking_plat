@@ -1,0 +1,1 @@
+<button class="button {{ 'button--primary' if primary|default(false) else 'button--secondary' }}" type="{{ type|default('submit') }}" {% if disabled|default(false) %}disabled{% endif %} {% if busy|default(false) %}aria-busy="true"{% endif %}><span class="button__label">{{ label }}</span>{% include "components/spinner.html" %}</button>

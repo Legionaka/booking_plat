@@ -1,5 +1,7 @@
 """Authentication business logic."""
 
+import secrets
+
 from argon2 import PasswordHasher
 from argon2.exceptions import VerificationError
 from flask import current_app
@@ -61,7 +63,9 @@ def register_user(email: str, password: str, full_name: str) -> User:
             "email_in_use", "An account with this email already exists.", 409
         ) from exc
 
-    token = _serializer(VERIFY_SALT).dumps({"user_id": user.id})
+    token = _serializer(VERIFY_SALT).dumps(
+        {"user_id": user.id, "nonce": secrets.token_urlsafe(8)}
+    )
     _email_service().send_verification(user, token)
     return user
 
@@ -91,6 +95,16 @@ def verify_email(token: str) -> User:
         raise AuthServiceError("invalid_token", "This link is invalid or has expired.", 400)
     db.session.commit()
     return db.session.get(User, consumed_user_id)
+
+
+def resend_verification(email: str) -> None:
+    user = db.session.execute(select(User).where(User.email == email)).scalar_one_or_none()
+    if user is None or user.verified_at is not None:
+        return
+    token = _serializer(VERIFY_SALT).dumps(
+        {"user_id": user.id, "nonce": secrets.token_urlsafe(8)}
+    )
+    _email_service().send_verification(user, token)
 
 
 def authenticate(email: str, password: str) -> User:

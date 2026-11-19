@@ -1,0 +1,1 @@
+element.style.setProperty("--progress", "50%");

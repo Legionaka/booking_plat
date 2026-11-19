@@ -3,6 +3,7 @@
 from email.message import EmailMessage
 from smtplib import SMTP, SMTP_SSL
 from typing import Protocol
+from urllib.parse import quote
 
 from flask import current_app
 
@@ -24,13 +25,25 @@ class EmailService(Protocol):
 
 
 class ConsoleEmailService:
-    """Log delivery payloads in development without logging recipient PII."""
+    """Log development email links so local flows can be completed without a mailbox."""
 
     def send_verification(self, user: User, token: str) -> None:
-        current_app.logger.info("Verification email prepared")
+        self._log_message("Verification", "/auth/verify", token)
 
     def send_password_reset(self, user: User, token: str) -> None:
-        current_app.logger.info("Password reset email prepared")
+        self._log_message("Password reset", "/auth/reset", token)
+
+    @classmethod
+    def _log_message(cls, label: str, path: str, token: str) -> None:
+        if current_app.config.get("CONSOLE_EMAIL_EXPOSE_LINKS", False):
+            current_app.logger.info("%s email prepared: %s", label, cls._auth_link(path, token))
+        else:
+            current_app.logger.info("%s email prepared", label)
+
+    @staticmethod
+    def _auth_link(path: str, token: str) -> str:
+        base_url = current_app.config["PUBLIC_BASE_URL"].rstrip("/")
+        return f"{base_url}{path}?token={quote(token, safe='')}"
 
     def send_booking_confirmation(
         self, user: User, booking: Booking, business: Business, service: Service
@@ -82,10 +95,17 @@ class SMTPEmailService:
             server.send_message(message)
 
     def send_verification(self, user: User, token: str) -> None:
-        self._send(user, "Verify your email", f"Your email verification token is: {token}")
+        url = self._auth_link("/auth/verify", token)
+        self._send(user, "Verify your email", f"Verify your email address: {url}")
 
     def send_password_reset(self, user: User, token: str) -> None:
-        self._send(user, "Reset your password", f"Your password reset token is: {token}")
+        url = self._auth_link("/auth/reset", token)
+        self._send(user, "Reset your password", f"Reset your password: {url}")
+
+    @staticmethod
+    def _auth_link(path: str, token: str) -> str:
+        base_url = current_app.config["PUBLIC_BASE_URL"].rstrip("/")
+        return f"{base_url}{path}?token={quote(token, safe='')}"
 
     def send_booking_confirmation(
         self, user: User, booking: Booking, business: Business, service: Service

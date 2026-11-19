@@ -2,14 +2,14 @@
 
 from datetime import UTC, datetime
 
-from flask import Blueprint, g, jsonify, request
+from flask import Blueprint, current_app, g, jsonify, request
 from psycopg.types.range import Range
 from pydantic import ValidationError
 from sqlalchemy import delete, func, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.exc import IntegrityError
 
-from app.extensions import db
+from app.extensions import db, limiter
 from app.models import (
     Booking,
     Business,
@@ -526,6 +526,17 @@ def public_services(slug):
         .all()
     )
     return _data([service.serialize_service(row) for row in rows])
+
+
+@public_bp.get("/<slug>")
+@limiter.limit(lambda: current_app.config["PUBLIC_AVAILABILITY_RATE_LIMIT"])
+def public_business(slug):
+    business = db.session.execute(
+        select(Business).where(Business.slug == slug)
+    ).scalar_one_or_none()
+    if business is None:
+        raise service.AdminError("not_found", "Resource not found.", 404)
+    return _data({"name": business.name, "slug": business.slug, "timezone": business.timezone})
 
 
 @public_bp.get("/<slug>/staff")

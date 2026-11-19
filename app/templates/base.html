@@ -11,11 +11,15 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/glass.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/typography.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/layout.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components/auth.css') }}">
     <script src="{{ url_for('static', filename='js/main.js') }}" defer></script>
+    <script src="{{ url_for('static', filename='js/components/toast.js') }}" defer></script>
+    <script src="{{ url_for('static', filename='js/components/auth-controls.js') }}" defer></script>
   </head>
   <body>
     <div class="ambient-light" aria-hidden="true"></div>
-    <main class="page-shell">
+    {% include "components/toast.html" %}
+    <main class="page-shell {% block page_shell_class %}{% endblock %}">
       {% block content %}{% endblock %}
     </main>
     {% block page_scripts %}{% endblock %}

@@ -68,6 +68,11 @@ class Config:
     RATELIMIT_KEY_PREFIX = os.getenv("RATELIMIT_KEY_PREFIX", "booking-platform:")
     RATELIMIT_IN_MEMORY_FALLBACK_ENABLED = False
     EMAIL_BACKEND = os.getenv("EMAIL_BACKEND", "console")
+    CONSOLE_EMAIL_EXPOSE_LINKS = os.getenv("CONSOLE_EMAIL_EXPOSE_LINKS", "false").lower() in {
+        "1",
+        "true",
+        "yes",
+    }
     SESSION_COOKIE_NAME = "booking_session"
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = "Lax"
@@ -86,6 +91,15 @@ class Config:
     AUTH_FORGOT_IP_RATE_LIMIT = os.getenv("AUTH_FORGOT_IP_RATE_LIMIT", "30 per hour")
     AUTH_RESET_TOKEN_RATE_LIMIT = os.getenv("AUTH_RESET_TOKEN_RATE_LIMIT", "5 per hour")
     AUTH_RESET_IP_RATE_LIMIT = os.getenv("AUTH_RESET_IP_RATE_LIMIT", "30 per hour")
+    AUTH_RESEND_VERIFICATION_EMAIL_RATE_LIMIT = os.getenv(
+        "AUTH_RESEND_VERIFICATION_EMAIL_RATE_LIMIT", "3 per hour"
+    )
+    AUTH_RESEND_VERIFICATION_IP_RATE_LIMIT = os.getenv(
+        "AUTH_RESEND_VERIFICATION_IP_RATE_LIMIT", "30 per hour"
+    )
+    AUTH_RESEND_VERIFICATION_COOLDOWN_SECONDS = int(
+        os.getenv("AUTH_RESEND_VERIFICATION_COOLDOWN_SECONDS", "60")
+    )
     PUBLIC_AVAILABILITY_RATE_LIMIT = os.getenv("PUBLIC_AVAILABILITY_RATE_LIMIT", "60 per minute")
     AVAILABILITY_MINIMUM_NOTICE_MINUTES = int(
         os.getenv("AVAILABILITY_MINIMUM_NOTICE_MINUTES", "120")

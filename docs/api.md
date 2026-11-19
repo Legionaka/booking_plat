@@ -22,6 +22,7 @@ Authentication uses an opaque server-side Redis session. The browser cookie is H
 | --- | --- | --- | --- |
 | POST | `/api/auth/register` | Create an unverified account and send a 24-hour verification token | Public; 20/hour per IP (configurable) |
 | POST | `/api/auth/verify` | Verify an email using a signed, single-use token | Public |
+| POST | `/api/auth/resend-verification` | Send a fresh link only when an account exists and is unverified; return the same success for all valid emails | Public; 3/hour per IP and email, plus 30/hour per IP |
 | POST | `/api/auth/login` | Verify credentials and rotate into an authenticated server-side session | Public; 5/minute per IP and email, plus 30/hour per IP |
 | POST | `/api/auth/logout` | Delete the current server-side session | Authenticated; CSRF required when a session cookie is present |
 | POST | `/api/auth/forgot` | Request a one-hour reset token; response does not reveal account existence | Public; 5/hour per email and 30/hour per IP |
@@ -40,6 +41,7 @@ Invalid credentials always return `401` with `Email or password is incorrect.` U
 | Method | Path | Purpose | Access |
 | --- | --- | --- | --- |
 | GET | `/api/b/<slug>/services` | List active services for a business | Public |
+| GET | `/api/b/<slug>` | Return public-safe business name, slug, and timezone | Public; rate limited |
 | GET | `/api/b/<slug>/slots?service=<id>&staff=<id>&date=<YYYY-MM-DD>` | Return available UTC slot start times for the requested business-local date | Public |
 | POST | `/api/b/<slug>/bookings` | Create a booking; respond `409` if the requested slot was taken | Customer session |
 
@@ -121,7 +123,9 @@ Error response:
 
 Registration intentionally returns `409 email_in_use` for a duplicate address so a person can correct a typo or proceed to sign in instead of being told only that a verification email was sent. This reveals whether an email has an account and carries an account-enumeration risk. Login and register always require a synchronizer CSRF token. Verify, forgot and reset require it only when the caller already has a session cookie; logout is session-authenticated and always needs the token.
 
-Auth throttles are environment-configurable. Defaults: registration 20/hour/IP; login 5/minute/IP+email and 30/hour/IP; forgot 5/hour/IP+email and 30/hour/IP; reset 5/hour/IP+token and 30/hour/IP. Redis is required for sessions and rate limiting; auth endpoints return 503 when it is unavailable.
+Auth throttles are environment-configurable. Defaults: registration 20/hour/IP; login 5/minute/IP+email and 30/hour/IP; forgot 5/hour/IP+email and 30/hour/IP; reset 5/hour/IP+token and 30/hour/IP; resend verification 3/hour/IP+email and 30/hour/IP. Redis is required for sessions and rate limiting; auth endpoints return 503 when it is unavailable.
+
+Verification and password reset emails link to `PUBLIC_BASE_URL/auth/verify?token=...` and `PUBLIC_BASE_URL/auth/reset?token=...`. Registration intentionally returns `409 email_in_use`; this account-enumeration trade-off is described above.
 
 ## Business administration (slice 3)
 

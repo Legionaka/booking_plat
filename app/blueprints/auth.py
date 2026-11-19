@@ -14,6 +14,7 @@ from app.schemas.auth import (
     ForgotRequest,
     LoginRequest,
     RegisterRequest,
+    ResendVerificationRequest,
     ResetRequest,
     VerifyRequest,
 )
@@ -95,6 +96,23 @@ def verify():
     payload = _validated(VerifyRequest)
     auth.verify_email(payload.token)
     return jsonify({"data": {"message": "Email verified."}})
+
+
+@auth_bp.post("/resend-verification")
+@_limit_by_ip_and_identity(
+    "AUTH_RESEND_VERIFICATION_EMAIL_RATE_LIMIT", "AUTH_RESEND_VERIFICATION_IP_RATE_LIMIT"
+)
+@_handle_errors
+def resend_verification():
+    payload = _validated(ResendVerificationRequest)
+    auth.resend_verification(payload.email)
+    response = jsonify(
+        {"data": {"message": "If the account needs verification, a new email was sent."}}
+    )
+    response.headers["Retry-After"] = str(
+        current_app.config["AUTH_RESEND_VERIFICATION_COOLDOWN_SECONDS"]
+    )
+    return response
 
 
 @auth_bp.post("/login")

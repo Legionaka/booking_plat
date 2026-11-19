@@ -607,14 +607,16 @@ The screens are designed in Figma, and Codex builds the frontend from that file 
 
 | Item | Value |
 | --- | --- |
-| Figma file | `<FIGMA_FILE_URL>` (placeholder: add once the file exists) |
-| Design system page | `<PAGE_NAME>` (tokens, glass depths, slot key states, components, chart styles) |
+| Figma file | [Booking platform design](https://www.figma.com/design/u1iNRYeax7OcV1qGksKGcn/Untitled?node-id=20-837) |
+| Design system page | `Design system` (tokens, glass depths, slot key states, components, chart styles) |
 | Customer portal frames | `<PAGE_NAME>` |
 | Owner and staff portal frames | `<PAGE_NAME>` |
 | Platform admin frames | `<PAGE_NAME>` |
-| Auth and onboarding frames | `<PAGE_NAME>` |
+| Auth and onboarding frames | `F • Authentication and onboarding` (see `docs/design/figma.md`) |
 | System states and emails | `<PAGE_NAME>` |
 | Prototype flows | Book end to end, cancel a late booking, owner confirms and completes, owner explores analytics, owner sign in, forgot password, staff accepts invite, owner onboarding |
+
+Verification and reset links are frontend routes at `/auth/verify?token=...` and `/auth/reset?token=...`, built from `PUBLIC_BASE_URL`. These links must never expose a password.
 
 For the file to be usable by Codex: name frames as `Portal / Screen / State`, keep colors, type, radius and blur as Figma variables, give the share link view access, and turn on Dev Mode (or the Figma MCP server) so Codex can read the file directly.
 

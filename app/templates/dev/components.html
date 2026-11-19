@@ -1,111 +1,12 @@
-{% extends "base.html" %}
-
-{% block page_title %}Frontend foundation · Booking Platform{% endblock %}
-
-{% block content %}
-  <header class="page-header">
-    <div class="page-header__copy">
-      <p class="page-kicker">Frontend foundation / section 13</p>
-      <h1>Dark glass, made tangible.</h1>
-      <p>Tokens and surface samples based on the planning document while Figma is being prepared.</p>
-    </div>
-    <a class="button-sample" href="#glass-depths">Explore the surfaces</a>
-  </header>
-
-  <div class="content-grid">
-    <section class="glass glass--background section-card span-full" aria-labelledby="glass-depths">
-      <div class="section-heading">
-        <p class="eyebrow">01 / Surface system</p>
-        <h2 id="glass-depths">Three glass depths</h2>
-        <p>Each surface keeps a solid Graphite fallback when backdrop blur is unavailable.</p>
-      </div>
-      <div class="glass-grid">
-        <article class="glass glass--background glass-sample">
-          <h3 class="glass-sample__title">Background panel</h3>
-          <p class="glass-sample__detail">Large panel · 24 px blur</p>
-        </article>
-        <article class="glass glass--card glass-sample">
-          <h3 class="glass-sample__title">Card</h3>
-          <p class="glass-sample__detail">Everyday surface · 28 px blur</p>
-        </article>
-        <article class="glass glass--floating glass-sample">
-          <h3 class="glass-sample__title">Floating layer</h3>
-          <p class="glass-sample__detail">Popover or sticky layer · 32 px blur</p>
-        </article>
-      </div>
-    </section>
-
-    <section class="glass glass--card section-card span-half" aria-labelledby="type-scale">
-      <div class="section-heading">
-        <p class="eyebrow">02 / Typography</p>
-        <h2 id="type-scale">Type scale</h2>
-        <p>Display headings use Bricolage Grotesque; interface text uses Instrument Sans.</p>
-      </div>
-      <div class="type-grid">
-        <div class="type-sample"><span class="type-14">Aa · Book a time</span><span class="type-sample__size">14 px</span></div>
-        <div class="type-sample"><span class="type-16">Aa · Book a time</span><span class="type-sample__size">16 px</span></div>
-        <div class="type-sample"><span class="type-20">Aa · Book a time</span><span class="type-sample__size">20 px</span></div>
-        <div class="type-sample"><span class="type-28">Aa · Book a time</span><span class="type-sample__size">28 px</span></div>
-        <div class="type-sample"><span class="type-40">Aa</span><span class="type-sample__size">40 px</span></div>
-        <div class="type-sample"><span class="type-56">Aa</span><span class="type-sample__size">56 px</span></div>
-        <div class="type-sample"><span class="type-72">Aa</span><span class="type-sample__size">72 px</span></div>
-      </div>
-      <p class="tabular-nums">Tabular figures: 09:30 · R1,280 · 1234567890</p>
-    </section>
-
-    <section class="glass glass--card section-card span-half" aria-labelledby="font-specimens">
-      <div class="section-heading">
-        <p class="eyebrow">03 / Local font files</p>
-        <h2 id="font-specimens">Font specimens</h2>
-        <p>Fonts are served by this app from <code>/static/fonts/</code>.</p>
-      </div>
-      <div class="font-grid">
-        <article class="font-sample">
-          <p class="font-sample__preview font-display">A clear day, at a glance.</p>
-          <p class="font-sample__name">Bricolage Grotesque · display</p>
-        </article>
-        <article class="font-sample">
-          <p class="font-sample__preview font-ui">A clear day, at a glance.</p>
-          <p class="font-sample__name">Instrument Sans · interface</p>
-        </article>
-      </div>
-    </section>
-
-    <section class="glass glass--card section-card span-full" aria-labelledby="colour-tokens">
-      <div class="section-heading">
-        <p class="eyebrow">04 / Palette</p>
-        <h2 id="colour-tokens">Colour tokens</h2>
-        <p>Amber, Jade and Rose communicate booking status only.</p>
-      </div>
-      <div class="swatch-grid">
-        <div class="swatch-item"><span class="swatch-chip swatch-obsidian"></span><span class="swatch-label">Obsidian · #050506</span></div>
-        <div class="swatch-item"><span class="swatch-chip swatch-graphite"></span><span class="swatch-label">Graphite · #0E0F12</span></div>
-        <div class="swatch-item"><span class="swatch-chip swatch-glass"></span><span class="swatch-label">Glass · 5% Pearl</span></div>
-        <div class="swatch-item"><span class="swatch-chip swatch-silver-light"></span><span class="swatch-label">Silver light · 8–12%</span></div>
-        <div class="swatch-item"><span class="swatch-chip swatch-steel-light"></span><span class="swatch-label">Steel light · 10–14%</span></div>
-        <div class="swatch-item"><span class="swatch-chip swatch-pearl"></span><span class="swatch-label">Pearl · #F5F6F8</span></div>
-        <div class="swatch-item"><span class="swatch-chip swatch-silver"></span><span class="swatch-label">Silver · #C4C9D4</span></div>
-        <div class="swatch-item"><span class="swatch-chip swatch-fog"></span><span class="swatch-label">Fog · #9298A6</span></div>
-        <div class="swatch-item"><span class="swatch-chip swatch-dim"></span><span class="swatch-label">Dim · #7A8090</span></div>
-        <div class="swatch-item"><span class="swatch-chip swatch-steel"></span><span class="swatch-label">Steel · #8A93A6</span></div>
-        <div class="swatch-item"><span class="swatch-chip swatch-amber"></span><span class="swatch-label">Amber · status</span></div>
-        <div class="swatch-item"><span class="swatch-chip swatch-jade"></span><span class="swatch-label">Jade · status</span></div>
-        <div class="swatch-item"><span class="swatch-chip swatch-rose"></span><span class="swatch-label">Rose · status</span></div>
-      </div>
-      <div class="status-examples" aria-label="Booking status samples">
-        <span class="status-example status-example--amber">◷ Pending</span>
-        <span class="status-example status-example--jade">✓ Confirmed</span>
-        <span class="status-example status-example--rose">× Cancelled</span>
-      </div>
-    </section>
-
-    <section class="glass glass--card section-card span-full" aria-labelledby="interaction-check">
-      <div class="section-heading">
-        <p class="eyebrow">05 / Interaction check</p>
-        <h2 id="interaction-check">Focus and action</h2>
-        <p>Tab to the button to inspect the visible keyboard focus ring. Hover over glass cards for the pointer sheen.</p>
-      </div>
-      <a class="button-sample" href="#colour-tokens">Primary action</a>
-    </section>
-  </div>
-{% endblock %}
+{% extends "base.html" %}{% block page_title %}Authentication components | Booking Platform{% endblock %}{% block content %}
+<div class="component-sheet"><header><p class="ambient-panel__eyebrow">DESIGN SYSTEM</p><h1>Authentication components</h1><p>Shared building blocks and accessible interaction states for F1.</p></header><span id="glass-depths"></span>
+<section class="glass glass--card component-group" id="type-scale"><h2>Typography</h2><p>Display: Bricolage Grotesque. Interface: Instrument Sans.</p></section>
+<section class="glass glass--card component-group" id="colour-tokens"><h2>Colour tokens</h2><p>Obsidian, Graphite, Pearl, Silver, Fog and Dim. Booking status colors stay reserved for bookings.</p></section>
+<section class="glass glass--card component-group"><h2>Interaction states</h2><div class="component-row"><button class="button button--primary">Ready</button><button class="button button--primary" aria-busy="true">Loading <span class="spinner" aria-hidden="true"></span></button><button class="button button--primary" aria-pressed="true">✓ Complete</button><button class="button button--secondary" disabled>Disabled</button><button class="button button--secondary" aria-pressed="true">Pressed</button><span class="focus-sample" tabindex="0">Keyboard focus sample</span></div><div class="component-row"><div class="field"><label class="field__label" for="password-error-sample">Password error</label><input class="field__control" id="password-error-sample" type="password" aria-invalid="true" value="short"><p class="field__help">At least 10 characters.</p><p class="field__error">Use at least 10 characters.</p></div><div class="field"><label class="field__label" for="password-disabled-sample">Password disabled</label><input class="field__control" id="password-disabled-sample" type="password" disabled value="Unavailable"><p class="field__help">This field is disabled.</p></div></div><div class="component-row"><div class="toast component-toast toast--success">✓ Verification email sent.</div><div class="toast component-toast toast--error">! Email or password is incorrect.</div><div class="toast component-toast toast--offline">Offline · Check your connection and retry.</div></div></section>
+<section class="glass glass--card component-group"><h2>Glass panel</h2><div class="glass glass--background component-sample">Background surface · solid fallback and blurred glass</div><div class="glass glass--floating component-sample">Floating surface · modal treatment</div></section>
+<section class="glass glass--card component-group"><h2>Buttons</h2><div class="component-row"><button class="button button--primary"><span class="button__label">Primary ready</span><span class="spinner" aria-hidden="true"></span></button><button class="button button--primary" aria-busy="true"><span class="button__label">Primary loading</span><span class="spinner" aria-hidden="true"></span></button><button class="button button--secondary">Secondary ready</button><button class="button button--secondary" disabled>Disabled</button></div></section>
+<section class="glass glass--card component-group"><h2>Text input states</h2><div class="component-row"><div class="field"><label class="field__label" for="demo-default">Default and helper</label><input class="field__control" id="demo-default" value="alex@example.com"><p class="field__help">Helper text appears here.</p></div><div class="field"><label class="field__label" for="demo-focus">Focus</label><input class="field__control" id="demo-focus" value="Focused" autofocus></div><div class="field"><label class="field__label" for="demo-error">Error</label><input class="field__control" id="demo-error" aria-invalid="true" value="not-an-email"><p class="field__error">Enter a valid email address.</p></div><div class="field"><label class="field__label" for="demo-disabled">Disabled</label><input class="field__control" id="demo-disabled" disabled value="Unavailable"></div></div></section>
+<section class="glass glass--card component-group"><h2>Password input states</h2><div class="field" data-field data-password-field><label class="field__label" for="demo-password">Show / hide and caps lock</label><div class="password-control"><input class="field__control" id="demo-password" type="password" value="SamplePass2026" aria-describedby="demo-password-help demo-password-error demo-password-caps"><button class="password-toggle button button--secondary" type="button" aria-label="Show password" aria-pressed="false">Show</button></div><p class="field__help" id="demo-password-help">At least 10 characters.</p><p class="field__error" id="demo-password-error" aria-live="polite"></p><p class="field__caps" id="demo-password-caps" aria-live="polite" hidden>Caps Lock is on.</p><div class="strength" data-strength aria-live="polite"><div class="strength__track"><span class="strength__fill"></span></div><p class="strength__label">Password strength: <span data-strength-label>Strong</span></p></div></div></section>
+<section class="glass glass--card component-group"><h2>Alert banners</h2><div class="component-row"><div class="alert alert--info" role="status"><span class="alert__mark">i</span><div class="alert__copy"><strong>Information</strong><span>Check your inbox for a message.</span></div></div><div class="alert alert--error" role="alert"><span class="alert__mark">!</span><div class="alert__copy"><strong>Sign-in failed</strong><span>Email or password is incorrect.</span></div></div><div class="alert alert--success" role="status"><span class="alert__mark">✓</span><div class="alert__copy"><strong>Success</strong><span>Your email has been verified.</span></div></div></div></section>
+<section class="glass glass--card component-group"><h2>Toast and spinner</h2><div class="component-row"><div class="toast component-toast">Offline · Check your connection and retry.</div><div class="spinner component-spinner" role="status" aria-label="Loading"></div><span>Loading spinner</span></div></section>
+<section class="glass glass--card component-group"><h2>Accessibility</h2><p>Focus rings stay visible. Statuses include labels and symbols, so color is not the only cue. Reduced motion removes movement effects.</p></section></div>{% endblock %}{% block page_scripts %}<script src="{{ url_for('static', filename='js/api.js') }}" defer></script>{% endblock %}

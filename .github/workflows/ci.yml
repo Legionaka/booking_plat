@@ -42,3 +42,61 @@ jobs:
           cache: pip
       - name: Full local CI sequence
         run: python scripts/check.py
+
+  auth-e2e:
+    # Keep browser smoke failures visible without making deployment depend on them.
+    continue-on-error: true
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: booking_platform
+          POSTGRES_USER: booking
+          POSTGRES_PASSWORD: booking_dev_only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U booking -d booking_platform"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      TEST_DATABASE_URL: postgresql+psycopg://booking:booking_dev_only@localhost:5432/booking_platform_test
+      MIGRATION_DATABASE_URL: postgresql+psycopg://booking:booking_dev_only@localhost:5432/booking_platform_migration_test
+      TEST_REDIS_URL: redis://localhost:6379/15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('requirements-dev.txt') }}
+          restore-keys: ${{ runner.os }}-playwright-
+      - name: Install development dependencies
+        run: python -m pip install --require-hashes -r requirements-dev.txt
+      - name: Install Chromium
+        run: python -m playwright install --with-deps chromium
+      - name: Run auth browser smoke and screenshots
+        run: python scripts/run_e2e.py
+      - name: Upload auth screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: auth-e2e-screenshots
+          path: |
+            .artifacts/e2e/screenshots/
+            .artifacts/e2e/auth-layout/
+          if-no-files-found: warn

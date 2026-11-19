@@ -52,6 +52,18 @@ class VerifyRequest(AuthRequest):
     token: Annotated[str, Field(min_length=1, max_length=4096)]
 
 
+class ResendVerificationRequest(AuthRequest):
+    email: EmailValue
+
+    @field_validator("email")
+    @classmethod
+    def normalize_email(cls, value: str) -> str:
+        normalized = value.strip().lower()
+        if not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", normalized):
+            raise ValueError("Enter a valid email address.")
+        return normalized
+
+
 class ForgotRequest(AuthRequest):
     email: EmailValue
 

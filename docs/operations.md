@@ -34,7 +34,26 @@ python -m piptools compile --upgrade --allow-unsafe --strip-extras --generate-ha
 
 Review the pins and hashes, then run `python scripts/check.py`. Dependabot opens weekly PRs for pip, GitHub Actions, and Docker updates. CI and local verification use the same script so lint, frontend policy, the full test suite, and the production image build stay in sync.
 
-For a local run, start real Postgres and Redis first with `docker compose up -d db redis`, then run `python scripts/check.py`. It installs the hashed development lock, creates the two dedicated test databases if needed, runs Ruff and the frontend policy scanner, runs the full pytest suite, and builds the production Docker image. CI provides Postgres and Redis service containers and invokes the same command.
+For a local run, start real Postgres and Redis first with `docker compose up -d db redis`, then run `python scripts/check.py`. It installs the hashed development lock, creates the two dedicated test databases if needed, runs Ruff and the frontend policy scanner, runs the regular pytest suite (excluding browser tests), and builds the production Docker image. Add `--e2e` to also run the optional Chromium suite. CI provides Postgres and Redis service containers and invokes the regular command; the browser suite runs in its own non-blocking job.
+
+### Browser auth smoke test
+
+The optional Chromium end-to-end test exercises registration, verification, sign-in, sign-out, rejected credentials, and an unsafe `next` value. It starts a local Flask process against the dedicated test PostgreSQL database and test Redis database. The app uses `EMAIL_BACKEND=console`; the verification URL is read from the captured local server output. The E2E process explicitly enables `CONSOLE_EMAIL_EXPOSE_LINKS` so the test can complete verification; ordinary console-email logs omit links and tokens. No real mailbox, SMTP, or PayFast account is used. Console verification and reset URLs contain one-time tokens, so keep `.artifacts/e2e/server.log` local and do not share it.
+
+Install the Chromium browser after installing the hashed development requirements:
+
+```sh
+python -m pip install --require-hashes -r requirements-dev.txt
+python -m playwright install chromium
+```
+
+Run the optional test locally with:
+
+```sh
+python scripts/check.py --e2e
+```
+
+The run saves full-page screenshots for each auth page at 1440, 820, and 390 px, with reduced motion enabled and disabled, under `.artifacts/e2e/screenshots/`. Login and registration also have 100%-zoom layout captures at 1920×1080, 2560×1440, 1440×900, 820×1180, and 390×844 under `.artifacts/e2e/auth-layout/`; the browser test checks panel width, primary-action visibility, and narrow-screen horizontal overflow. CI runs this in a separate non-blocking job and uploads both screenshot folders as an artifact.
 
 ## Render deployment setup
 

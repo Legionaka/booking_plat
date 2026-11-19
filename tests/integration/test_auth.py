@@ -287,6 +287,88 @@ def test_forgot_response_is_identical_for_known_and_unknown_emails(client, email
     assert known.json == unknown.json == {"data": {"message": GENERIC_FORGOT_MESSAGE}}
 
 
+def test_resend_verification_uses_same_response_for_known_unknown_and_verified_accounts(
+    client, email_service
+):
+    register(client)
+    initial_token = email_service.verification_tokens["person@example.test"]
+
+    unverified = auth_post(
+        client, "/api/auth/resend-verification", {"email": "person@example.test"}
+    )
+    unknown = auth_post(
+        client, "/api/auth/resend-verification", {"email": "missing@example.test"}
+    )
+    resent_token = email_service.verification_tokens["person@example.test"]
+    assert verify(client, resent_token).status_code == 200
+    verified = auth_post(
+        client, "/api/auth/resend-verification", {"email": "person@example.test"}
+    )
+
+    assert unverified.status_code == unknown.status_code == verified.status_code == 200
+    assert unverified.json == unknown.json == verified.json
+    assert (
+        unverified.headers["Retry-After"]
+        == unknown.headers["Retry-After"]
+        == verified.headers["Retry-After"]
+    )
+    assert resent_token != initial_token
+    assert email_service.verification_tokens["person@example.test"] == resent_token
+
+
+def test_resend_verification_is_rate_limited_per_email(client, app):
+    original = app.config["AUTH_RESEND_VERIFICATION_EMAIL_RATE_LIMIT"]
+    app.config["AUTH_RESEND_VERIFICATION_EMAIL_RATE_LIMIT"] = "1 per hour"
+    try:
+        first = auth_post(
+            client, "/api/auth/resend-verification", {"email": "person@example.test"}
+        )
+        second = auth_post(
+            client, "/api/auth/resend-verification", {"email": "person@example.test"}
+        )
+    finally:
+        app.config["AUTH_RESEND_VERIFICATION_EMAIL_RATE_LIMIT"] = original
+
+    assert first.status_code == 200
+    assert second.status_code == 429
+    assert second.json["error"]["code"] == "rate_limited"
+    assert second.headers.get("Retry-After")
+
+
+def test_resend_verification_is_rate_limited_per_ip(client, app):
+    email_limit = app.config["AUTH_RESEND_VERIFICATION_EMAIL_RATE_LIMIT"]
+    ip_limit = app.config["AUTH_RESEND_VERIFICATION_IP_RATE_LIMIT"]
+    app.config["AUTH_RESEND_VERIFICATION_EMAIL_RATE_LIMIT"] = "10 per hour"
+    app.config["AUTH_RESEND_VERIFICATION_IP_RATE_LIMIT"] = "1 per hour"
+    try:
+        first = auth_post(
+            client, "/api/auth/resend-verification", {"email": "first@example.test"}
+        )
+        second = auth_post(
+            client, "/api/auth/resend-verification", {"email": "second@example.test"}
+        )
+    finally:
+        app.config["AUTH_RESEND_VERIFICATION_EMAIL_RATE_LIMIT"] = email_limit
+        app.config["AUTH_RESEND_VERIFICATION_IP_RATE_LIMIT"] = ip_limit
+
+    assert first.status_code == 200
+    assert second.status_code == 429
+    assert second.headers.get("Retry-After")
+
+
+def test_resend_verification_does_not_email_verified_accounts(client, email_service):
+    register(client)
+    original_token = email_service.verification_tokens["person@example.test"]
+    assert verify(client, original_token).status_code == 200
+
+    response = auth_post(
+        client, "/api/auth/resend-verification", {"email": "person@example.test"}
+    )
+
+    assert response.status_code == 200
+    assert email_service.verification_tokens["person@example.test"] == original_token
+
+
 def test_repeated_failed_logins_are_rate_limited(client):
     results = [login(client, email="missing@example.test") for _ in range(8)]
 

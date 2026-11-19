@@ -40,8 +40,9 @@ def test_components_page_and_frontend_assets_are_served_with_strict_csp(app, mon
         assert asset_response.status_code == 200, asset
 
     main_js = client.get("/static/js/main.js").text
-    assert 'style.setProperty("--mx"' in main_js
-    assert 'style.setProperty("--my"' in main_js
+    assert "pointermove" not in main_js
+    assert "--mx" not in main_js
+    assert "--my" not in main_js
 
 
 def test_payfast_csp_exception_is_exclusive_to_the_handoff_endpoint(app):

@@ -1,0 +1,1 @@
+<div class="alert alert--{{ tone|default('info') }}" role="{{ 'alert' if tone|default('info') == 'error' else 'status' }}" aria-live="polite" data-alert hidden><span class="alert__mark" aria-hidden="true">{{ mark|default('i') }}</span><div class="alert__copy">{% if title %}<strong>{{ title }}</strong>{% endif %}<span data-alert-message>{{ message|default('') }}</span></div></div>

@@ -24,6 +24,7 @@ Planning doc: docs/planning.md
 - All colors, radii, blur and fonts come from static/css/tokens.css. Never hard-code them.
 - Theme: dark, black, glassy, silver. Monochrome. Amber, Jade and Rose are for booking status only. No purple.
 - Every glass surface needs a solid fallback. Respect prefers-reduced-motion. Keep focus rings visible and tap targets at least 44 px.
+- Pointer-following sheen and cursor-driven `--mx`/`--my` lighting are removed from glass, buttons, and slot keys. Keep the slowly drifting ambient background light and ordinary hover/press states.
 - Match Figma spacing, radii and states. If a state is missing in Figma, extend the nearest pattern and note it in docs/design/figma.md.
 - No inline `<style>` blocks, style attributes, `setAttribute('style', ...)`, or inline event handlers. Use CSS classes, CSS files, external scripts, and `element.style.setProperty` only for dynamic values.
 - Do not use `data:` URIs for images or CSS backgrounds. SVG charts get their styling from CSS classes. Render QR codes as SVG DOM elements or serve them from an application-owned endpoint.

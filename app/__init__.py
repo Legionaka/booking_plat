@@ -123,6 +123,7 @@ def create_app(test_config: dict[str, object] | None = None) -> Flask:
         raise RuntimeError(seed_error)
 
     app.config.setdefault("RATELIMIT_IN_MEMORY_FALLBACK_ENABLED", False)
+    app.config.setdefault("RATELIMIT_HEADERS_ENABLED", True)
 
     db.init_app(app)
     migrate.init_app(app, db, directory="migrations")
@@ -178,6 +179,8 @@ def create_app(test_config: dict[str, object] | None = None) -> Flask:
         )
         response.headers.setdefault("X-Content-Type-Options", "nosniff")
         response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+        if request.path.startswith("/auth/"):
+            response.headers["Referrer-Policy"] = "no-referrer"
         response.headers.setdefault("X-Frame-Options", "DENY")
         if app.config.get("APP_ENV") == "production":
             response.headers.setdefault(
@@ -196,6 +199,7 @@ def create_app(test_config: dict[str, object] | None = None) -> Flask:
     from app.blueprints.dev import dev_bp
     from app.blueprints.insights import insights_bp
     from app.blueprints.payments import payments_bp
+    from app.blueprints.web import web_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(admin_bp)
@@ -205,6 +209,7 @@ def create_app(test_config: dict[str, object] | None = None) -> Flask:
     app.register_blueprint(dev_bp)
     app.register_blueprint(payments_bp)
     app.register_blueprint(insights_bp)
+    app.register_blueprint(web_bp)
 
     @app.get("/api/config")
     def public_config():

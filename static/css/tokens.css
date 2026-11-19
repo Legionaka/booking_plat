@@ -6,6 +6,7 @@
   --graphite: #0e0f12;
   --pearl: #f5f6f8;
   --silver: #c4c9d4;
+  --ambient-silver: #c9ced8;
   --fog: #9298a6;
   --dim: #7a8090;
   --steel: #8a93a6;
@@ -14,16 +15,16 @@
   --rose: #ff6b8a;
 
   /* Translucent values used by the glass and ambient-light recipes. */
-  --glass: rgba(245, 246, 248, 0.05);
-  --glass-background-fill: rgba(245, 246, 248, 0.04);
-  --glass-floating-fill: rgba(245, 246, 248, 0.06);
-  --glass-border: rgba(245, 246, 248, 0.1);
-  --glass-top: rgba(245, 246, 248, 0.24);
-  --silver-light: rgba(201, 206, 216, 0.1);
-  --steel-light: rgba(138, 147, 166, 0.12);
-  --sheen: rgba(245, 246, 248, 0.12);
+  --glass: rgba(255, 255, 255, 0.051);
+  --glass-background-fill: rgba(255, 255, 255, 0.039);
+  --glass-floating-fill: rgba(255, 255, 255, 0.059);
+  --glass-border: rgba(255, 255, 255, 0.102);
+  --glass-top: rgba(255, 255, 255, 0.239);
+  --silver-light: rgba(201, 206, 216, 0.102);
+  --steel-light: rgba(138, 147, 166, 0.122);
   --focus-glow: rgba(245, 246, 248, 0.18);
-  --glass-inner-glow: rgba(245, 246, 248, 0.035);
+  --glass-inner-glow: rgba(255, 255, 255, 0.035);
+  --glass-back: rgba(255, 255, 255, 0.039);
   --glass-shadow: rgba(0, 0, 0, 0.42);
   --clear: transparent;
 
@@ -31,6 +32,7 @@
   --r-panel: 28px;
   --r-card: 20px;
   --r-control: 14px;
+  --r-small: 4px;
   --r-slot: 12px;
   --r-pill: 999px;
 
@@ -48,6 +50,8 @@
   /* 8 px spacing grid. */
   --space-0: 0;
   --space-1: 8px;
+  --space-half: 4px;
+  --space-1-5: 12px;
   --space-2: 16px;
   --space-3: 24px;
   --space-4: 32px;
@@ -67,4 +71,7 @@
   --blur-ambient: 96px;
   --motion-quick: 180ms;
   --motion-ambient: 60s;
+  --auth-form-width: 440px;
+  --auth-field-height: 56px;
+  --auth-button-height: 48px;
 }

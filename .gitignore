@@ -13,6 +13,8 @@ __pycache__/
 .hypothesis/
 .coverage
 htmlcov/
+.artifacts/
+debug.log
 *.egg-info/
 dist/
 build/
