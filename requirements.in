@@ -8,6 +8,6 @@ pydantic>=2,<3
 psycopg[binary]>=3.2,<4
 SQLAlchemy>=2.0,<3
 alembic>=1.15,<2
-rq>=2.3,<3
+rq>=2.3,<4
 gunicorn>=23,<24
 sentry-sdk[flask]>=2,<3

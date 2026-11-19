@@ -14,7 +14,7 @@ dependencies = [
   "psycopg[binary]>=3.2,<4",
   "SQLAlchemy>=2.0,<3",
   "alembic>=1.15,<2",
-  "rq>=2.3,<3",
+  "rq>=2.3,<4",
 ]
 
 [tool.pytest.ini_options]
