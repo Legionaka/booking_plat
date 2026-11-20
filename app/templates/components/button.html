@@ -1,1 +1,4 @@
-<button class="button {{ 'button--primary' if primary|default(false) else 'button--secondary' }}" type="{{ type|default('submit') }}" {% if disabled|default(false) %}disabled{% endif %} {% if busy|default(false) %}aria-busy="true"{% endif %}><span class="button__label">{{ label }}</span>{% include "components/spinner.html" %}</button>
+{% from "components/spinner.html" import spinner %}
+{% macro button(label, type='button', primary=false, disabled=false, busy=false) -%}
+<button class="button {{ 'button--primary' if primary else 'button--secondary' }}" type="{{ type }}" {% if disabled %}disabled{% endif %} {% if busy %}aria-busy="true"{% endif %}><span class="button__label">{{ label }}</span>{{ spinner() }}</button>
+{%- endmacro %}

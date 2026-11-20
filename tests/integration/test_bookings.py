@@ -176,7 +176,7 @@ def client_for(app, user_id):
 
 
 def test_payfast_handoff_has_only_route_specific_form_action_policy(
-    app, scenario, monkeypatch
+    app, scenario, monkeypatch, assert_rendered_page_contract
 ):
     customer, csrf = client_for(app, scenario["users"][0])
     payment = {
@@ -191,6 +191,7 @@ def test_payfast_handoff_has_only_route_specific_form_action_policy(
     )
     handoff_policy = handoff.headers["Content-Security-Policy"]
     assert handoff.status_code == 200
+    assert_rendered_page_contract(handoff.get_data(as_text=True), "/payments/handoff/123")
     handoff_form_action = next(
         directive.strip()
         for directive in handoff_policy.split(";")

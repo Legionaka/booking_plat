@@ -1,5 +1,6 @@
 """Email service interface and development console backend."""
 
+import sys
 from email.message import EmailMessage
 from smtplib import SMTP, SMTP_SSL
 from typing import Protocol
@@ -25,20 +26,31 @@ class EmailService(Protocol):
 
 
 class ConsoleEmailService:
-    """Log development email links so local flows can be completed without a mailbox."""
+    """Write complete messages only in development; redact all other environments."""
 
     def send_verification(self, user: User, token: str) -> None:
-        self._log_message("Verification", "/auth/verify", token)
+        url = self._auth_link("/auth/verify", token)
+        self._log_message(user, "Verify your email", f"Verify your email address: {url}")
 
     def send_password_reset(self, user: User, token: str) -> None:
-        self._log_message("Password reset", "/auth/reset", token)
+        url = self._auth_link("/auth/reset", token)
+        self._log_message(user, "Reset your password", f"Reset your password: {url}")
 
-    @classmethod
-    def _log_message(cls, label: str, path: str, token: str) -> None:
-        if current_app.config.get("CONSOLE_EMAIL_EXPOSE_LINKS", False):
-            current_app.logger.info("%s email prepared: %s", label, cls._auth_link(path, token))
-        else:
-            current_app.logger.info("%s email prepared", label)
+    @staticmethod
+    def _log_message(user: User, subject: str, text_body: str) -> None:
+        if current_app.config.get("APP_ENV") == "development":
+            block = (
+                "========== BEGIN DEVELOPMENT EMAIL ==========\n"
+                f"To: {user.email}\n"
+                f"Subject: {subject}\n"
+                "Body:\n"
+                f"{text_body}\n"
+                "========== END DEVELOPMENT EMAIL ==========\n"
+            )
+            sys.stdout.write(block)
+            sys.stdout.flush()
+            return
+        current_app.logger.info("%s email prepared", subject)
 
     @staticmethod
     def _auth_link(path: str, token: str) -> str:
@@ -48,12 +60,16 @@ class ConsoleEmailService:
     def send_booking_confirmation(
         self, user: User, booking: Booking, business: Business, service: Service
     ) -> None:
-        current_app.logger.info("Booking confirmation email prepared")
+        self._log_message(
+            user,
+            f"Booking confirmed with {business.name}",
+            f"Your {service.name} booking has been confirmed. Booking reference: {booking.id}.",
+        )
 
     def send_notification_email(
         self, user: User, subject: str, text_body: str, html_body: str
     ) -> None:
-        current_app.logger.info("Notification email prepared")
+        self._log_message(user, subject, text_body)
 
 
 class SMTPEmailService:

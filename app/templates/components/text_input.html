@@ -1,5 +1,7 @@
+{% macro text_input(field_id, label, name, type='text', autocomplete='off', required=true, disabled=false, error='', help='', placeholder='', minlength=None, maxlength=None) -%}
 <div class="field" data-field>
   <label class="field__label" for="{{ field_id }}">{{ label }}</label>
-  <input class="field__control" id="{{ field_id }}" name="{{ name }}" type="{{ type|default('text') }}" autocomplete="{{ autocomplete|default('off') }}" {% if required|default(true) %}required{% endif %} {% if disabled|default(false) %}disabled{% endif %} {% if error|default('') %}aria-invalid="true"{% endif %} aria-describedby="{{ field_id }}-help {{ field_id }}-error" {% if placeholder %}placeholder="{{ placeholder }}"{% endif %} {% if minlength %}minlength="{{ minlength }}"{% endif %} {% if maxlength %}maxlength="{{ maxlength }}"{% endif %}>
-  <p class="field__help" id="{{ field_id }}-help">{{ help|default('') }}</p><p class="field__error" id="{{ field_id }}-error" aria-live="polite">{{ error|default('') }}</p>
+  <input class="field__control" id="{{ field_id }}" name="{{ name }}" type="{{ type }}" autocomplete="{{ autocomplete }}" {% if required %}required{% endif %} {% if disabled %}disabled{% endif %} {% if error %}aria-invalid="true"{% endif %} aria-describedby="{{ field_id }}-help {{ field_id }}-error" {% if placeholder %}placeholder="{{ placeholder }}"{% endif %} {% if minlength is not none %}minlength="{{ minlength }}"{% endif %} {% if maxlength is not none %}maxlength="{{ maxlength }}"{% endif %}>
+  <p class="field__help" id="{{ field_id }}-help">{{ help }}</p><p class="field__error" id="{{ field_id }}-error" aria-live="polite">{{ error }}</p>
 </div>
+{%- endmacro %}

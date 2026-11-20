@@ -55,6 +55,14 @@ The API is available at `http://localhost:5000`. For an optional demo business, 
 docker compose exec web flask --app app:create_app seed-demo
 ```
 
+Local email uses the console backend by default and prints complete messages, including verification and reset links, to the web container output. To catch SMTP messages in Mailpit instead, replace the existing email/SMTP settings in `.env` with the optional Mailpit settings in `.env.example` (do not append duplicate keys), then start the dev profile:
+
+```sh
+docker compose --profile dev up
+```
+
+Open the inbox at [http://127.0.0.1:8025](http://127.0.0.1:8025). Open a verification or password-reset message and follow the link in its plain-text body. Mailpit's SMTP and web UI ports bind to loopback only. The default console backend prints message bodies only when `APP_ENV=development`; other environments never print email bodies or tokens.
+
 The default demo owner login (`owner@fade-lab.demo` / `DemoOnly-ChangeMe-2026!`) is for local demos only. Change the demo credentials before sharing a non-production environment. Overnight shifts must be entered as two working-hour ranges because each range requires `end_time` later than `start_time`.
 
 See [docs/environment.md](docs/environment.md) for configuration and [docs/operations.md](docs/operations.md) for migrations, backups, restore, and deployment operations.

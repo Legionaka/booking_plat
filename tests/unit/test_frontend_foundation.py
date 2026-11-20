@@ -4,13 +4,16 @@ from pathlib import Path
 from app import BASE_CONTENT_SECURITY_POLICY, content_security_policy_for
 
 
-def test_components_page_and_frontend_assets_are_served_with_strict_csp(app, monkeypatch):
+def test_components_page_and_frontend_assets_are_served_with_strict_csp(
+    app, monkeypatch, assert_rendered_page_contract
+):
     monkeypatch.setattr(app.extensions["redis"], "delete", lambda *_args: 0)
     client = app.test_client()
 
     response = client.get("/dev/components")
 
     assert response.status_code == 200
+    assert_rendered_page_contract(response.get_data(as_text=True), "/dev/components")
     assert 'class="ambient-light"' in response.text
     assert 'id="glass-depths"' in response.text
     assert 'id="type-scale"' in response.text

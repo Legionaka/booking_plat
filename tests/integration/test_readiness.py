@@ -112,6 +112,7 @@ def test_production_rejects_missing_or_loopback_service_urls(key, value, message
         ("SMTP_HOST", "", "SMTP_HOST"),
         ("SMTP_FROM_ADDRESS", "", "SMTP_FROM_ADDRESS"),
         ("SMTP_TLS_MODE", "", "SMTP_TLS_MODE"),
+        ("SMTP_TLS_MODE", "none", "SMTP_TLS_MODE"),
         ("PAYFAST_MERCHANT_ID", "", "PAYFAST_MERCHANT_ID"),
         ("PAYFAST_MERCHANT_KEY", "", "PAYFAST_MERCHANT_KEY"),
         ("PAYFAST_PASSPHRASE", "", "PAYFAST_PASSPHRASE"),
@@ -143,6 +144,23 @@ def test_each_required_production_setting_is_guarded(key, invalid, message_key):
     }
     with pytest.raises(RuntimeError, match=message_key):
         create_app({**valid, key: invalid})
+
+
+def test_development_allows_plaintext_smtp_transport():
+    application = create_app(
+        {
+            "APP_ENV": "development",
+            "EMAIL_BACKEND": "smtp",
+            "SMTP_HOST": "mailpit",
+            "SMTP_PORT": 1025,
+            "SMTP_TLS_MODE": "none",
+            "SMTP_USERNAME": "",
+            "SMTP_PASSWORD": "",
+        }
+    )
+
+    assert application.config["SMTP_TLS_MODE"] == "none"
+    assert application.extensions["email_service"].__class__.__name__ == "SMTPEmailService"
 
 
 def test_ready_checks_postgres_and_redis_and_health_is_liveness(client, app, monkeypatch):
@@ -272,6 +290,7 @@ def test_request_id_is_returned_and_json_logs_exclude_secrets(client, app):
             "REDIS_URL": app.config["REDIS_URL"],
             "RATELIMIT_STORAGE_URI": app.config["RATELIMIT_STORAGE_URI"],
             "RATELIMIT_KEY_PREFIX": app.config["RATELIMIT_KEY_PREFIX"],
+            "APP_ENV": "test",
             "SESSION_COOKIE_SECURE": False,
         }
     )
@@ -285,7 +304,8 @@ def test_request_id_is_returned_and_json_logs_exclude_secrets(client, app):
 
     def log_probe():
         current_app.extensions["email_service"].send_verification(
-            SimpleNamespace(id=42), "verification-token-never-log"
+                SimpleNamespace(id=42, email="private-reader@example.test"),
+                "verification-token-never-log",
         )
         return jsonify({"ok": True})
 

@@ -33,6 +33,23 @@ def test_auth_pages_render_with_csp_and_no_inline_assets(client):
         assert client.get(path).headers["Referrer-Policy"] == "no-referrer"
 
 
+def test_all_server_rendered_page_routes_obey_template_contract(
+    app, client, assert_rendered_page_contract
+):
+    page_rules = [
+        rule
+        for rule in app.url_map.iter_rules()
+        if rule.endpoint.startswith(("web.", "dev."))
+        and "GET" in rule.methods
+        and "<" not in rule.rule
+    ]
+    assert page_rules
+    for rule in page_rules:
+        response = client.get(rule.rule)
+        assert response.status_code == 200, rule.rule
+        assert_rendered_page_contract(response.get_data(as_text=True), rule.rule)
+
+
 def test_business_branded_login_uses_public_name_and_safe_unknown_fallback(client, app):
     with app.app_context():
         db.session.add(Business(slug="fade-lab", name="Fade Lab Barbers"))

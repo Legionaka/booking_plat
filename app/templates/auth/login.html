@@ -1,5 +1,9 @@
 {% extends "base.html" %}
 {% from "components/glass_panel.html" import panel %}
+{% from "components/alert.html" import alert %}
+{% from "components/button.html" import button %}
+{% from "components/text_input.html" import text_input %}
+{% from "components/password_input.html" import password_input %}
 {% block page_title %}Sign in | Booking Platform{% endblock %}
 {% block page_shell_class %}page-shell--auth{% endblock %}
 {% block content %}
@@ -9,11 +13,11 @@
     {% call panel() %}
       <h1 id="page-heading">{{ 'Sign in to ' ~ business_name if business_name else ('Sign in to your business' if portal else 'Sign in to Fade Lab Barbers') }}</h1>
       <p class="auth-subtitle">{{ 'For owners and staff.' if portal else 'Your bookings, all in one place.' }}</p>
-      {% include "components/alert.html" %}
+      {{ alert() }}
       <form data-auth-form novalidate>
-        {% set field_id='login-email' %}{% set label='Email' %}{% set name='email' %}{% set type='email' %}{% set autocomplete='username' %}{% set placeholder='alex@example.com' %}{% set help='' %}{% include "components/text_input.html" %}
-        {% set field_id='login-password' %}{% set label='Password' %}{% set name='password' %}{% set autocomplete='current-password' %}{% include "components/password_input.html" %}
-        {% set label='Sign in' %}{% set type='submit' %}{% set primary=true %}{% include "components/button.html" %}
+        {{ text_input('login-email', 'Email', 'email', type='email', autocomplete='username', placeholder='alex@example.com') }}
+        {{ password_input('login-password', 'Password', 'password', autocomplete='current-password', help='') }}
+        {{ button('Sign in', type='submit', primary=true) }}
       </form>
       <nav class="auth-links" aria-label="Sign in options">
         <a class="button button--secondary" href="/auth/forgot">Forgot password</a>

@@ -86,7 +86,6 @@ def main() -> int:
             "RATELIMIT_STORAGE_URI": redis_url,
             "SECRET_KEY": "local-e2e-only-secret",
             "EMAIL_BACKEND": "console",
-            "CONSOLE_EMAIL_EXPOSE_LINKS": "true",
             "PUBLIC_BASE_URL": base_url,
             "PAYFAST_SANDBOX": "true",
             "PORT": str(port),

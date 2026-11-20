@@ -1,1 +1,3 @@
-<div class="toast toast--{{ tone|default('info') }}" role="status" aria-live="polite" data-toast hidden>{{ message|default('') }}</div>
+{% macro toast(tone='info', message='') -%}
+<div class="toast toast--{{ tone }}" role="status" aria-live="polite" data-toast hidden>{{ message }}</div>
+{%- endmacro %}

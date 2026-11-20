@@ -27,7 +27,7 @@ def verification_link_from_captured_output(log_path: Path) -> str:
     deadline = time.monotonic() + 10
     while time.monotonic() < deadline:
         output = log_path.read_text(encoding="utf-8", errors="replace")
-        match = re.search(r"Verification email prepared: (http://[^\s]+)", output)
+        match = re.search(r"Verify your email address: (http://[^\s]+)", output)
         if match:
             return match.group(1)
         time.sleep(0.1)
@@ -108,6 +108,17 @@ def test_register_sign_in_link_and_login_submit_diagnostics(browser: Browser):
     ]
     output.write_text(json.dumps(diagnostics, indent=2), encoding="utf-8")
     assert not unexpected_failures, diagnostics
+
+
+def test_password_caps_lock_listener_ignores_non_keyboard_events(browser: Browser):
+    page = browser.new_page()
+    page_errors: list[str] = []
+    page.on("pageerror", lambda error: page_errors.append(str(error)))
+    page.goto(f"{BASE_URL}/auth/register")
+    page.locator("#register-password").evaluate(
+        "input => input.dispatchEvent(new Event('keyup'))"
+    )
+    assert not page_errors, page_errors
 
 
 def test_register_verify_login_sign_out_and_security(browser: Browser):

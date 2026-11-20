@@ -91,7 +91,10 @@
       });
       input.addEventListener("keyup", (event) => {
         const caps = document.getElementById(`${input.id}-caps`);
-        if (caps) caps.hidden = !event.getModifierState("CapsLock");
+        if (caps) {
+          caps.hidden = typeof event.getModifierState !== "function"
+            || !event.getModifierState("CapsLock");
+        }
       });
     });
   }

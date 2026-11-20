@@ -1,5 +1,6 @@
 from types import SimpleNamespace
 
+import pytest
 from app.services import email
 
 
@@ -73,6 +74,38 @@ def test_smtp_ssl_mode_uses_ssl_transport(app, monkeypatch):
     assert "context" in smtp.kwargs
     assert smtp.kwargs["timeout"] == 3
     assert smtp.started_tls is False
+
+
+def test_console_email_prints_complete_message_in_development(app, capsys):
+    app.config.update(APP_ENV="development", PUBLIC_BASE_URL="http://localhost:5000")
+    user = SimpleNamespace(email="customer@example.test")
+
+    with app.app_context():
+        email.ConsoleEmailService().send_password_reset(user, "private-reset-token")
+
+    output = capsys.readouterr().out
+    assert "BEGIN DEVELOPMENT EMAIL" in output
+    assert "To: customer@example.test" in output
+    assert "Subject: Reset your password" in output
+    assert "Body:" in output
+    assert "http://localhost:5000/auth/reset?token=private-reset-token" in output
+    assert "END DEVELOPMENT EMAIL" in output
+
+
+@pytest.mark.parametrize("environment", ["test", "staging", "production"])
+def test_console_email_never_prints_body_or_token_outside_development(
+    app, capsys, caplog, environment
+):
+    app.config.update(APP_ENV=environment, PUBLIC_BASE_URL="http://localhost:5000")
+    user = SimpleNamespace(email="customer@example.test")
+
+    with app.app_context():
+        email.ConsoleEmailService().send_password_reset(user, "private-reset-token")
+
+    output = capsys.readouterr().out
+    assert output == ""
+    assert "private-reset-token" not in caplog.text
+    assert "/auth/reset" not in caplog.text
 
 
 def _capture_kwargs(smtp, kwargs):

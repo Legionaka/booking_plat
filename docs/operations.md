@@ -20,6 +20,19 @@ For a demo environment that should populate itself at each deployment, set `SEED
 
 Set `DEMO_OWNER_PASSWORD` explicitly in the host's environment/secret store before enabling startup seeding. Do not use the repository's local demo password in production; keep `SEED_DEMO_ON_STARTUP=false` there. Production startup rejects the repository default, and the demo seed is intended for sandbox/demo environments only.
 
+### Local email and Mailpit
+
+The default `EMAIL_BACKEND=console` prints a clearly marked message block with recipient, subject, and full plain-text body to the web container stdout only when `APP_ENV=development`. Read verification and password-reset links in that block. In other environments the console backend omits bodies and tokens.
+
+For an inbox UI, replace the existing email/SMTP settings in `.env` with the optional Mailpit settings block from `.env.example` (`EMAIL_BACKEND=smtp`, host `mailpit`, port `1025`, empty username/password, and `SMTP_TLS_MODE=none`; do not append duplicate keys), then start the dev profile:
+
+```sh
+docker compose --profile dev up
+```
+
+Open [http://127.0.0.1:8025](http://127.0.0.1:8025). Open the verification or reset message and use the link in its plain-text body. Mailpit is optional, is excluded from the production image and Render configuration, and publishes SMTP/UI ports on `127.0.0.1` only. Production configuration continues to require SMTP STARTTLS or SSL.
+
+
 ## Dependency updates and local verification
 
 `requirements.in` and `requirements-dev.in` contain supported version ranges. `requirements.txt` and `requirements-dev.txt` are the pip-tools compiled locks with hashes; the production Docker build and CI install from those lock files with `--require-hashes`. The supported Pydantic range is `>=2,<3`. The checked-in resolver output currently selects Pydantic 2.14.3, and compilation with that broader range resolves successfully. No package conflict is reproducible from the current inputs, so there is no conflicting package to name; preserve any resolver error output if a future range change fails rather than narrowing the range speculatively.
@@ -38,7 +51,7 @@ For a local run, start real Postgres and Redis first with `docker compose up -d 
 
 ### Browser auth smoke test
 
-The optional Chromium end-to-end test exercises registration, verification, sign-in, sign-out, rejected credentials, and an unsafe `next` value. It starts a local Flask process against the dedicated test PostgreSQL database and test Redis database. The app uses `EMAIL_BACKEND=console`; the verification URL is read from the captured local server output. The E2E process explicitly enables `CONSOLE_EMAIL_EXPOSE_LINKS` so the test can complete verification; ordinary console-email logs omit links and tokens. No real mailbox, SMTP, or PayFast account is used. Console verification and reset URLs contain one-time tokens, so keep `.artifacts/e2e/server.log` local and do not share it.
+The optional Chromium end-to-end test exercises registration, verification, sign-in, sign-out, rejected credentials, and unsafe `next` values. It starts a local Flask process against the dedicated test PostgreSQL database and test Redis database. The app uses `EMAIL_BACKEND=console`; the verification URL is read from the captured server stdout, and the test does not use Mailpit. No real mailbox, SMTP, or PayFast account is used. The captured development email contains a one-time token, so keep `.artifacts/e2e/server.log` local and do not share it.
 
 Install the Chromium browser after installing the hashed development requirements:
 
