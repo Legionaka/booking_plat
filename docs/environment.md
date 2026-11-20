@@ -45,6 +45,9 @@ Production startup validates every required value below before serving requests.
 | `AUTH_FORGOT_IP_RATE_LIMIT` | No | `30 per hour` | Password reset requests by IP. |
 | `AUTH_RESET_TOKEN_RATE_LIMIT` | No | `5 per hour` | Password reset submissions by token. |
 | `AUTH_RESET_IP_RATE_LIMIT` | No | `30 per hour` | Password reset submissions by IP. |
+| `AUTH_RESEND_VERIFICATION_EMAIL_RATE_LIMIT` | No | `3 per hour` | Verification resend attempts by IP and email. |
+| `AUTH_RESEND_VERIFICATION_IP_RATE_LIMIT` | No | `30 per hour` | Verification resend attempts by IP. |
+| `AUTH_RESEND_VERIFICATION_COOLDOWN_SECONDS` | No | `60` | Minimum wait between verification emails. |
 | `PUBLIC_AVAILABILITY_RATE_LIMIT` | No | `60 per minute` | Public availability requests. |
 | `AVAILABILITY_MINIMUM_NOTICE_MINUTES` | No | `120` | Minimum booking notice. |
 | `AVAILABILITY_MAXIMUM_ADVANCE_DAYS` | No | `60` | Maximum booking advance window. |
@@ -72,3 +75,5 @@ Production startup validates every required value below before serving requests.
 Production also requires a non-default `SECRET_KEY`, an SMTP backend with TLS, HTTPS public URLs, a non-sandbox PayFast configuration, and an explicitly configured `TRUSTED_PROXY_HOPS` greater than zero. Set that value to the exact number of trusted reverse proxy hops for the selected host. If it is too high, a client may spoof `X-Forwarded-For`; that can undermine IP-based rate limits and client-IP logging. If it is too low, rate limits may key on the proxy address and affect multiple users together. Zero ignores forwarded headers and is the safe local default, but production startup rejects it. `SENTRY_DSN` and SMTP authentication credentials are optional; configure both SMTP credentials or neither.
 
 Keep `SEED_DEMO_ON_STARTUP=false` in production. If using startup seeding in a demo environment, set both `SEED_DEMO_ON_STARTUP=true` and `DEMO_MODE=true`, and supply a unique `DEMO_OWNER_PASSWORD` through the hosting environment's secret store. The web entrypoint will refuse to start if the flags disagree or the repository's demo password is still configured.
+
+The local browser test runner accepts `E2E_PORT` (default `5001`), `E2E_SMOKE_ONLY` and `E2E_LAYOUT_ONLY` (both default `false`), `E2E_BASE_URL` (default `http://127.0.0.1:5001`), `E2E_EMAIL_LOG` (the runner-managed server log path), and `AUTH_LAYOUT_SCREENSHOT_DIR` (default `.artifacts/e2e/auth-layout`). These optional settings are not needed by the deployed application.

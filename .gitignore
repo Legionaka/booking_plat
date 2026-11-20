@@ -8,6 +8,7 @@ ENV/
 __pycache__/
 *.py[cod]
 .pytest_cache/
+.pytest-tmp/
 .ruff_cache/
 .mypy_cache/
 .hypothesis/
@@ -18,4 +19,10 @@ debug.log
 *.egg-info/
 dist/
 build/
+.idea/
+.vscode/
+.DS_Store
+*.sqlite
+*.sqlite3
+*.db
 

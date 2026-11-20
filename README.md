@@ -93,3 +93,30 @@ Dependency ranges live in `requirements.in` and `requirements-dev.in`; the hashe
 - The demo runs in PayFast sandbox mode; no real payments are processed.
 - **Screenshots:** `[ product screenshots here]`
 
+## Project structure
+
+```text
+app/
+  blueprints/
+  models/
+  schemas/
+  services/
+  templates/
+app/static/
+  css/
+  fonts/
+  js/
+docs/
+  assets/screenshots/
+  design/
+  decisions/
+migrations/
+scripts/
+tests/
+  concurrency/
+  contract/
+  e2e/
+  integration/
+  unit/
+```
+

@@ -44,3 +44,25 @@ def test_frontend_policy_scanner_rejects_inline_styles_scripts_handlers_and_data
     assert any("inline style block" in issue for issue in issues)
     assert any("inline script" in issue for issue in issues)
     assert any("data: URI" in issue for issue in issues)
+
+
+def test_frontend_policy_scanner_rejects_gradients_masks_and_gradient_text(tmp_path: Path):
+    static = tmp_path / "static"
+    static.mkdir()
+    (static / "bad.css").write_text(
+        ".a{background:linear-gradient(red,blue)}"
+        ".b{background:repeating-radial-gradient(red,blue)}"
+        ".c{mask-image:linear-gradient(transparent,black)}"
+        ".d{-webkit-mask:linear-gradient(transparent,black)}"
+        ".e{background-clip:text}",
+        encoding="utf-8",
+    )
+    (static / "bad.svg").write_text(
+        '<svg><linearGradient id="a"/><radialGradient id="b"/></svg>',
+        encoding="utf-8",
+    )
+
+    issues = scan_files([static])
+
+    assert len(issues) == 2
+    assert all("gradient or mask fade" in issue for issue in issues)

@@ -31,6 +31,7 @@ def test_startup_propagates_migration_process_failure_without_execing_gunicorn(m
     monkeypatch.setenv("MIGRATE_ON_STARTUP", "true")
     monkeypatch.setattr(web_startup, "_migrate", migration)
     monkeypatch.setattr(web_startup, "_serve", lambda: calls.append("gunicorn"))
+    monkeypatch.setattr(web_startup, "_with_advisory_lock", lambda callback: callback())
 
     with pytest.raises(subprocess.CalledProcessError):
         web_startup.main()

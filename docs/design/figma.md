@@ -42,12 +42,12 @@ The command palette, booking detail drawer, and toasts are shared components, no
 
 ## Design tokens
 
-Map Figma variables to CSS custom properties in `static/css/tokens.css`:
+Map Figma variables to CSS custom properties in `app/static/css/tokens.css`:
 
 | Figma variable | CSS property |
 | --- | --- |
 | `color/obsidian`, `color/graphite` | `--obsidian`, `--graphite` |
-| `color/glass-fill`, `color/glass-border`, `color/glass-top` | `--glass`, `--glass-border`, `--glass-top` |
+| `color/glass-fill`, `color/glass-border` | `--glass`, `--glass-border` |
 | `color/pearl`, `color/silver`, `color/fog`, `color/dim`, `color/steel` | `--pearl`, `--silver`, `--fog`, `--dim`, `--steel` |
 | `color/amber`, `color/jade`, `color/rose` | `--amber`, `--jade`, `--rose` |
 | `radius/panel`, `radius/card`, `radius/control`, `radius/slot` | `--r-panel`, `--r-card`, `--r-control`, `--r-slot` |
@@ -64,7 +64,7 @@ F1 values have been reconciled with Figma. See [design-tokens.md](design-tokens.
 
 Do not implement guest checkout, social/Google sign-in, staff invite acceptance, two-step verification or backup codes, session listing, or platform-admin sign-in in F1. The backend has no matching route/role for these screens. Lockout has no distinct backend response today; the shared login error handles supported responses. Each frame is listed with route/template status in [auth-frame-inventory.md](auth-frame-inventory.md).
 
-Figma uses the layer name “Violet light field,” bound to a silver monochrome tint (`#c9ced81a`). It is represented as a silver ambient field per the product palette. The pointer-following sheen was removed from glass surfaces, buttons, and slot keys; the slow ambient background drift and standard hover/press states remain. Blur, static gradients, and shadows use external CSS with solid Graphite fallbacks and reduced-motion behavior. No auth artwork requires imported assets or CSP exceptions.
+Flat-style override: the global product rule removes gradients, SVG gradient paints, mask fades, gradient-clipped text, ambient light fields and drift, top-edge glass fades, inner glows, colored slot glows, and pointer-following sheen. Glass retains a translucent white fill, solid 1 px hairline, and blur with a Graphite fallback. Primary buttons and selected slots use flat Pearl; selected slots have a 2 px Pearl ring. Charts use solid strokes and fills, with five discrete heatmap steps. Ordinary hover, press, focus, and reduced-motion behavior remain. The Figma layer named “Violet light field” is omitted; it is not rendered as a product surface. No auth artwork requires imported assets or CSP exceptions.
 
 ## Responsive auth layout decisions
 

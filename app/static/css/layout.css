@@ -119,14 +119,6 @@
   --swatch-color: var(--glass);
 }
 
-.swatch-silver-light {
-  --swatch-color: var(--silver-light);
-}
-
-.swatch-steel-light {
-  --swatch-color: var(--steel-light);
-}
-
 .swatch-amber {
   --swatch-color: var(--amber);
 }
@@ -213,9 +205,9 @@
   justify-content: center;
   min-height: 44px;
   padding-inline: var(--space-3);
-  border: 1px solid var(--glass-top);
+  border: 1px solid var(--glass-border);
   border-radius: var(--r-control);
-  background: linear-gradient(135deg, var(--pearl), var(--silver));
+  background: var(--pearl);
   color: var(--obsidian);
   font-weight: 600;
   text-decoration: none;
@@ -224,7 +216,7 @@
 
 .button-sample:hover {
   transform: translateY(-2px);
-  box-shadow: 0 10px 32px var(--focus-glow);
+  box-shadow: 0 10px 32px var(--glass-shadow);
 }
 
 @media (max-width: 760px) {

@@ -295,7 +295,7 @@ booking-platform/
     models/  schemas/  services/  jobs/
     blueprints/                 # auth, public, customer, admin, platform, payments
     templates/
-      base.html                 # ambient light layer, fonts, nav shell
+      base.html                 # fonts, shared document shell
       auth/                     # sign in, register, reset, verify, invite, 2FA, onboarding
       customer/                 # landing, booking flow, my bookings, booking detail
       owner/                    # dashboard, calendar, services, staff, hours, customers,
@@ -311,7 +311,7 @@ booking-platform/
         components/             # slot.css  button.css  badge.css  modal.css  toast.css
                                 # booking-block.css  kpi-card.css  chart-card.css
       js/
-        main.js                 # pointer sheen, shared helpers
+        main.js                 # shared helpers
         api.js                  # fetch wrapper, error handling
         components/             # slot-picker.js  availability-strip.js  command-palette.js
                                 # drawer.js  toast.js  timeline.js
@@ -369,214 +369,32 @@ Phases 1 to 4 plus a live deployment is already a strong portfolio piece. Treat 
 - Load testing (Locust or k6) and a short write-up of the results
 - Optional rewrite of one service in FastAPI with async I/O, to show range
 
-## 13. Frontend design system: dark, black, glassy
+## 13. Frontend design system: flat monochrome glass
 
-This section follows the frontend-design guidance and the direction you gave: a dark, black, glassy interface with data drawn as SVG. It replaces the earlier matte plan, which was too simple and not dynamic enough.
+The product uses a flat, dark monochrome interface. Figma is the layout and typography reference; this global style rule removes every gradient treatment.
 
-### Subject and audience
+### Surfaces and color
 
-A booking product with two main audiences. Customers are on phones and want to book in under a minute. Owners are on a laptop or tablet at the counter and want the day at a glance plus real insight. The UI has two jobs: make time feel tangible (open slots look like things you can pick) and make the business feel alive (the dashboard reads like a live control room).
+- Page backgrounds use solid Obsidian. There is no ambient light layer or drift animation.
+- Glass uses a translucent white fill, a 1 px solid hairline border, and backdrop blur. Graphite remains the solid fallback when blur is unavailable.
+- Primary buttons and selected slots use flat Pearl with Obsidian text. A selected slot has a 2 px Pearl ring and no colored glow.
+- Amber, Jade, and Rose are reserved for booking status. Other interface surfaces use the monochrome palette in `app/static/css/tokens.css`.
+- No CSS gradients, SVG gradient paints, mask fades, gradient-clipped text, or pointer-following sheen are allowed. `scripts/check_frontend_policy.py` enforces this in templates and static assets.
 
-### Visual direction
+### Type, shape, and motion
 
-- **True black with cool ambient light.** Soft silver and steel-grey light fields, heavily blurred and slowly drifting, sit behind the interface so the glass has something to refract. The light carries no hue, so the product reads as black chrome.
-- **Glass at three depths:** background panels, cards, and floating layers (modals, popovers, the sticky booking bar). Deeper layers are more opaque and blurrier.
-- **Glass recipe:** 4 to 6% white fill, 24 to 32 px backdrop blur, a 1 px hairline at 10% white, a brighter top-edge highlight and a faint inner glow.
-- **Specular sheen** in silver-white follows the pointer across cards and buttons.
-- **Time slots are raised glass keys** with an inner sheen and a lift on hover. A selected slot fills with Pearl (near-white) with dark text and a soft white glow.
-- **Primary buttons are polished silver:** a pearl-to-silver gradient with dark text.
-- **Color is reserved for meaning.** The interface is monochrome (black, graphite, silver, white). Amber, Jade and Rose appear only as booking status.
-- **Every glass surface has a solid fallback** for devices without backdrop blur.
-- Depth comes from blur, light and layering, not from flat grey cards or heavy drop shadows.
+- Headings use self-hosted Bricolage Grotesque; interface text uses self-hosted Instrument Sans.
+- Tabular figures are used for times, prices, and data labels.
+- Radius roles are 28 px panels, 20 px cards, 14 px controls, 12 px slot keys, and full pills for badges and toggles.
+- Ordinary hover, press, focus, and state transitions remain. Respect `prefers-reduced-motion`; keep focus rings visible and tap targets at least 44 px.
 
-### Color tokens
+### Charts
 
-| Token | Value | Use |
-| --- | --- | --- |
-| Obsidian | `#050506` | Page background |
-| Graphite | `#0E0F12` | Deepest panels, table rows |
-| Glass | white at 5% fill, 10% border, 24% top highlight | All panels and cards |
-| Silver light | `#C9CED8` at 8 to 12% | Ambient light field |
-| Steel light | `#8A93A6` at 10 to 14% | Ambient light field |
-| Pearl | `#F5F6F8` | Primary text, primary buttons, selected state |
-| Silver | `#C4C9D4` | Chart primary line, icons, strong secondary text |
-| Fog | `#9298A6` | Secondary text |
-| Dim | `#7A8090` | Tertiary text (still AA on Obsidian) |
-| Steel | `#8A93A6` | Chart secondary series |
-| Amber | `#E3B25C` | Pending or held (status only) |
-| Jade | `#4ADE9F` | Confirmed (status only) |
-| Rose | `#FF6B8A` | Cancelled or no-show (status only) |
+Charts are hand-written SVG with solid strokes and fills at fixed opacity. Heatmaps use five discrete flat steps from graphite to white. Donut segments, bars, and status marks use flat palette colors. Every chart needs an accessible name and empty or insufficient-data states.
 
-Text and chart labels must meet WCAG AA contrast against the glass. Status badges carry an icon and a label as well as color.
+### Layout
 
-### Type and shape
-
-- Headings: Bricolage Grotesque. Interface and body: Instrument Sans.
-- Tabular figures for times, prices and every number in charts and tables.
-- Scale: 14, 16, 20, 28, 40, 56 and 72 px, with very large numerals for hero metrics. Line length under 75 characters.
-- Radius by role: 28 px large panels, 20 px cards, 14 px controls, 12 px slot keys, full pill for badges and toggles.
-
-### SVG data visualization
-
-All charts are crisp SVG in one style: thin glowing strokes, gradient fills fading to transparent, faint dotted guides instead of heavy gridlines, tabular-figure labels, and tooltips as small glass popovers.
-
-| Chart | Where | What it shows |
-| --- | --- | --- |
-| KPI card with sparkline | Owner dashboard | Bookings, revenue, fill rate, with a delta badge |
-| Area chart with glowing line | Dashboard, payments | Revenue and bookings over time, hover crosshair |
-| Rounded bar chart | Analytics | Bookings per week, current week highlighted |
-| Donut | Dashboard | Booking status mix, total in the center |
-| Heatmap (weekday by hour) | Week view, analytics | Busiest times |
-| Radial rings | Dashboard | Utilisation per staff member |
-| Funnel | Analytics | Viewed page, chose service, picked time, paid deposit, confirmed |
-| Trend line with threshold | Analytics | No-show and cancellation rate |
-| Availability strip | Customer slot picker | Tiny bar per day so open days are visible at a glance |
-| Health sparklines and growth chart | Platform admin | Requests, errors, queue length, business growth |
-
-Every chart also needs an empty state, a loading skeleton and a not-enough-data state.
-
-### Motion
-
-Motion is purposeful, with one signature moment and everything else answering an action.
-
-- **Dashboard load (signature moment):** KPI numbers count up, chart lines draw in and bars rise, staggered over about 900 ms.
-- **Cursor-following sheen** on glass cards and buttons.
-- **Live now line** on the day timeline, with the current booking softly pulsing.
-- **Slot selection:** the key lifts and glows, and the sticky summary bar slides up with a springy ease.
-- **Booking confirmed:** an SVG ticket forms around the chosen slot with an animated checkmark.
-- **Ambient light drift** on 60 second loops.
-- **Shared-element transitions:** a slot key becomes the confirmation card, a booking block expands into its detail drawer.
-- **Command palette** (Ctrl or Cmd + K) in the owner portal.
-- Hover and press states run 150 to 200 ms. A reduced-motion variant removes the drift, draw-in and sheen but keeps state changes clear.
-
-### Layout concept
-
-Customer booking page: choices on the left, the availability strip and slot keys as the focus, a sticky glass summary at the bottom.
-
-```
-+------------------------------------------------------+
-| Fade Lab Barbers                 Next open: today 14:30 |
-+-------------------+----------------------------------+
-| Service           |  Mon  Tue  Wed  Thu  Fri  Sat    |
-|  Fade        R180 |  ###  ##   #    ###  --   ##     |
-|  Beard trim   R90 |                                  |
-| Barber: Any    v  |  [09:00] [09:30] [10:00] [10:30] |
-|                   |  [11:00] [11:30] [ --- ] [12:30] |
-+-------------------+----------------------------------+
-| Fade, Fri 21 Nov at 10:00, R180        [Confirm booking] |
-+------------------------------------------------------+
-```
-
-Owner dashboard: slim left rail, a KPI row, the day timeline with one column per staff member, and the charts alongside. Content is left-aligned, and numbers are right-aligned in tables.
-
-```
-+------+----------------------------------------------------+
-| Nav  | Today, Fri 21 Nov                  [Ctrl K] [Add]  |
-|      | [Bookings 6 ~~] [Revenue R1,020 ~~] [Fill 82% (o)] |
-| Day  +-----------+-----------+----------------------------+
-| Week | Sipho     | Lerato    |  Revenue (area chart)      |
-| Svcs | 09 [Fade] |           |  Status mix (donut)        |
-| Team | 10        | [Beard]   |  Utilisation (rings)       |
-+------+-----------+-----------+----------------------------+
-```
-
-### Design review: what changed
-
-- **Gloss now covers every surface**, not just the slot keys, with ambient light behind it so the glass reads as glass.
-- **The palette is monochrome:** black, graphite, silver and white replace the earlier purple and ice accents. Hierarchy comes from brightness, sheen and blur rather than hue.
-- **Charts use white-to-silver gradient strokes and fills.** Heatmaps run graphite to white. Only status segments (donut, status badges, calendar blocks) use Amber, Jade and Rose.
-- **Charts and motion are central**, replacing the earlier quiet dashboard.
-- **Kept from the earlier review:** color means booking status only, radius varies by role, there are no all-caps eyebrow labels or numbered markers, and there is one orchestrated moment rather than animation on everything.
-- **Avoided:** low-contrast grey on grey (every text token passes AA), and identical cards repeated with identical shadows.
-
-### Starting tokens
-
-```css
-:root {
-  --obsidian: #050506;
-  --graphite: #0E0F12;
-  --glass: rgba(255, 255, 255, 0.05);
-  --glass-border: rgba(255, 255, 255, 0.10);
-  --glass-top: rgba(255, 255, 255, 0.24);
-  --pearl: #F5F6F8;
-  --silver: #C4C9D4;
-  --fog: #9298A6;
-  --dim: #7A8090;
-  --steel: #8A93A6;
-  --amber: #E3B25C;
-  --jade: #4ADE9F;
-  --rose: #FF6B8A;
-  --r-panel: 28px;
-  --r-card: 20px;
-  --r-control: 14px;
-  --r-slot: 12px;
-  --font-display: 'Bricolage Grotesque', system-ui, sans-serif;
-  --font-ui: 'Instrument Sans', system-ui, sans-serif;
-}
-
-body {
-  background: var(--obsidian);
-  color: var(--pearl);
-}
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  background:
-    radial-gradient(40vw 40vw at 15% 20%, rgba(201, 206, 216, 0.10), transparent 70%),
-    radial-gradient(35vw 35vw at 85% 75%, rgba(138, 147, 166, 0.12), transparent 70%);
-  animation: drift 60s ease-in-out infinite alternate;
-}
-
-.glass {
-  position: relative;
-  background: var(--glass);
-  backdrop-filter: blur(28px) saturate(120%);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--r-card);
-  box-shadow: inset 0 1px 0 var(--glass-top), 0 20px 50px rgba(0, 0, 0, 0.55);
-}
-.glass::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  background: radial-gradient(240px circle at var(--mx, 50%) var(--my, 0%), rgba(255, 255, 255, 0.10), transparent 60%);
-}
-@supports not (backdrop-filter: blur(1px)) {
-  .glass { background: #14161b; }
-}
-
-.btn-primary {
-  background: linear-gradient(180deg, #FFFFFF, #C9CED8);
-  color: var(--obsidian);
-  border-radius: var(--r-control);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8), 0 8px 20px rgba(0, 0, 0, 0.4);
-}
-
-.slot {
-  border-radius: var(--r-slot);
-  font-variant-numeric: tabular-nums;
-  transition: transform 160ms ease, box-shadow 160ms ease;
-}
-.slot:hover { transform: translateY(-2px); }
-.slot[aria-pressed='true'] {
-  background: linear-gradient(180deg, #FFFFFF, #C9CED8);
-  color: var(--obsidian);
-  box-shadow: 0 0 24px rgba(255, 255, 255, 0.35);
-}
-.slot:focus-visible { outline: 2px solid var(--pearl); outline-offset: 3px; }
-
-@keyframes drift { to { transform: translate3d(2%, -2%, 0) scale(1.05); } }
-@media (prefers-reduced-motion: reduce) {
-  body::before { animation: none; }
-  .slot { transition: none; }
-}
-```
-
-A few lines of vanilla JS set `--mx` and `--my` on each `.glass` element from `pointermove`, which drives the sheen.
+Customer booking prioritizes the service choice, availability strip, selectable time slots, and booking summary. Owner views prioritize the calendar, status, and business metrics. Match spacing, radii, type, and copy to Figma; document any behavior-driven visual override in `docs/design/figma.md`.
 
 ### Interface copy
 
@@ -637,7 +455,7 @@ The command palette, booking detail drawer and toasts are shared components, not
 
 ### Figma to code rules
 
-- Frontend is vanilla HTML, CSS and JS only. No React, Tailwind or charting library. Charts are hand-written SVG modules in `static/js/charts/`.
+- Frontend is vanilla HTML, CSS and JS only. No React, Tailwind or charting library. Charts are hand-written SVG modules in `app/static/js/charts/`.
 - Every Figma variable becomes a CSS custom property in `tokens.css` (the file in section 13 is the starting point). Components never hard-code hex values, radii or blur amounts.
 - Add a blur token (`--blur-glass: 28px`) and any spacing tokens that the Figma file defines.
 - Build each Figma component once as a CSS component plus a template partial, and reuse it. The slot key, glass panel, status badge, KPI card, chart card, booking block and drawer are the core set.
@@ -650,7 +468,7 @@ The command palette, booking detail drawer and toasts are shared components, not
 | Figma variable | CSS custom property |
 | --- | --- |
 | color/obsidian, color/graphite | `--obsidian`, `--graphite` |
-| color/glass-fill, glass-border, glass-top | `--glass`, `--glass-border`, `--glass-top` |
+| color/glass-fill, glass-border | `--glass`, `--glass-border` |
 | color/pearl, silver, fog, dim, steel | `--pearl`, `--silver`, `--fog`, `--dim`, `--steel` |
 | color/amber, jade, rose | `--amber`, `--jade`, `--rose` |
 | radius/panel, card, control, slot | `--r-panel`, `--r-card`, `--r-control`, `--r-slot` |
@@ -659,7 +477,7 @@ The command palette, booking detail drawer and toasts are shared components, not
 
 ### Frontend build order for Codex
 
-1. `tokens.css`, `base.css`, `glass.css` and `base.html` (ambient light layer, fonts).
+1. `tokens.css`, `base.css`, `glass.css` and `base.html` (flat surfaces, fonts).
 2. The living component sheet at `/dev/components`, with every component in every state.
 3. Auth screens.
 4. Customer booking flow: slot picker, availability strip, confirmation.
@@ -697,7 +515,7 @@ Planning doc: <PLANNING_DOC_URL>
 ## Frontend rules
 - Vanilla HTML, CSS and JS only. No frameworks, no Tailwind, no chart library.
 - Charts are hand-written SVG in static/js/charts.
-- All colors, radii, blur and fonts come from static/css/tokens.css. Never hard-code them.
+- All colors, radii, blur and fonts come from app/static/css/tokens.css. Never hard-code them.
 - Theme: dark, black, glassy, silver. Monochrome. Amber, Jade and Rose are for booking status only. No purple.
 - Every glass surface needs a solid fallback. Respect prefers-reduced-motion. Keep focus rings visible and tap targets at least 44 px.
 - Match Figma spacing, radii and states. If a state is missing in Figma, extend the nearest pattern and note it in docs/design/figma.md.

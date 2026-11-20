@@ -8,10 +8,17 @@ from html.parser import HTMLParser
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-SCAN_ROOTS = (ROOT / "app" / "templates", ROOT / "static")
+SCAN_ROOTS = (ROOT / "app" / "templates", ROOT / "app" / "static")
 IGNORED_SUFFIXES = {".woff", ".woff2", ".ttf", ".otf", ".eot"}
 DATA_URI = re.compile(r"\bdata:[a-z][a-z0-9.+-]*/", re.IGNORECASE)
 STYLE_MUTATION = re.compile(r"setAttribute\s*\(\s*['\"]style['\"]", re.IGNORECASE)
+GRADIENT = re.compile(
+    r"(?:-webkit-)?(?:repeating-)?(?:linear|radial|conic)-gradient\s*\(|"
+    r"<(?:\w+:)?(?:linearGradient|radialGradient)\b|"
+    r"\bmask-image\s*:|\s-webkit-mask\s*:|"
+    r"\bbackground-clip\s*:\s*text\b",
+    re.IGNORECASE,
+)
 
 
 class _TemplatePolicyParser(HTMLParser):
@@ -46,6 +53,8 @@ def scan_files(paths: tuple[Path, ...] | list[Path]) -> list[str]:
                 issues.append(f"{path}: data: URI")
             if STYLE_MUTATION.search(content):
                 issues.append(f"{path}: setAttribute('style', ...) mutation")
+            if GRADIENT.search(content):
+                issues.append(f"{path}: gradient or mask fade")
             if path.suffix.lower() in {".html", ".htm", ".jinja", ".jinja2"}:
                 parser = _TemplatePolicyParser(path)
                 parser.feed(content)

@@ -14,7 +14,7 @@ def test_components_page_and_frontend_assets_are_served_with_strict_csp(
 
     assert response.status_code == 200
     assert_rendered_page_contract(response.get_data(as_text=True), "/dev/components")
-    assert 'class="ambient-light"' in response.text
+    assert 'class="ambient-light"' not in response.text
     assert 'id="glass-depths"' in response.text
     assert 'id="type-scale"' in response.text
     assert 'id="colour-tokens"' in response.text
@@ -63,8 +63,8 @@ def test_payfast_csp_exception_is_exclusive_to_the_handoff_endpoint(app):
 
 def test_font_faces_exist_and_cover_stylesheet_weights():
     root = Path(__file__).resolve().parents[2]
-    css_files = sorted((root / "static" / "css").glob("*.css"))
-    face_css = (root / "static" / "css" / "fonts.css").read_text(encoding="utf-8")
+    css_files = sorted((root / "app" / "static" / "css").glob("*.css"))
+    face_css = (root / "app" / "static" / "css" / "fonts.css").read_text(encoding="utf-8")
     face_blocks = re.findall(r"@font-face\s*\{([^}]+)\}", face_css, flags=re.IGNORECASE)
     declared_faces: dict[str, set[str]] = {}
 
@@ -73,7 +73,7 @@ def test_font_faces_exist_and_cover_stylesheet_weights():
         weight_match = re.search(r"font-weight\s*:\s*(\d+)", block)
         url_match = re.search(r"url\(\s*['\"]?([^)'\"]+)", block)
         assert family_match and weight_match and url_match, block
-        font_path = (root / "static" / "css" / url_match.group(1)).resolve()
+        font_path = (root / "app" / "static" / "css" / url_match.group(1)).resolve()
         assert font_path.is_file(), f"@font-face points to missing font: {font_path}"
         declared_faces.setdefault(family_match.group(1).strip(), set()).add(weight_match.group(1))
 

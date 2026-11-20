@@ -186,3 +186,24 @@ Owner endpoints are scoped to the business in the URL; missing or cross-business
 - `GET /api/admin/businesses/{id}/audit-log` accepts `entity`, `actor`, `from`, `to`, `limit`, and `offset`. Secret fields and raw payment payloads are excluded.
 
 `flask seed-demo [--reset]` creates deterministic Fade Lab Barbers sample data in non-production environments. Demo credentials are configured with `DEMO_OWNER_EMAIL`, `DEMO_OWNER_PASSWORD`, and `DEMO_OWNER_NAME`; defaults are for local demos only.
+
+## Registered route coverage
+
+The following additional concrete paths complete the route inventory. `business_id`, `service_id`, `staff_id`, `time_off_id`, and `user_id` are integer path parameters.
+
+| Method | Path | Purpose / access |
+| --- | --- | --- |
+| PATCH | `/api/admin/businesses/{business_id}/services/{service_id}` | Update an owner-scoped service |
+| POST | `/api/admin/businesses/{business_id}/services/{service_id}/deactivate` | Deactivate an owner-scoped service |
+| PATCH | `/api/admin/businesses/{business_id}/staff/{staff_id}` | Update an owner-scoped staff member |
+| POST | `/api/admin/businesses/{business_id}/staff/{staff_id}/deactivate` | Deactivate an owner-scoped staff member |
+| POST, DELETE | `/api/admin/businesses/{business_id}/staff/{staff_id}/services/{service_id}` | Assign or remove a staff service |
+| GET, PUT | `/api/admin/businesses/{business_id}/staff/{staff_id}/working-hours` | Read or replace working hours |
+| GET, POST | `/api/admin/businesses/{business_id}/staff/{staff_id}/time-off` | List or create time off |
+| DELETE | `/api/admin/businesses/{business_id}/staff/{staff_id}/time-off/{time_off_id}` | Remove time off |
+| GET | `/api/b/{slug}/staff` | List active public staff |
+| GET | `/api/admin/businesses/{business_id}/analytics/status-mix` | Booking status aggregate |
+| GET | `/api/admin/businesses/{business_id}/analytics/heatmap` | Weekday and hour aggregate |
+| GET | `/api/admin/businesses/{business_id}/analytics/utilisation` | Staff utilisation aggregate |
+| GET | `/api/admin/businesses/{business_id}/analytics/outcomes` | Booking outcome aggregate |
+| GET | `/api/admin/businesses/{business_id}/customers/{user_id}` | Read this business's customer history |

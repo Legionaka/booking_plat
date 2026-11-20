@@ -20,7 +20,6 @@ RUN pip install --no-cache-dir --no-index --find-links=/wheels --require-hashes 
     && useradd --system --gid app --home-dir /app app
 COPY --chown=app:app app ./app
 COPY --chown=app:app migrations ./migrations
-COPY --chown=app:app static ./static
 COPY --chown=app:app pyproject.toml ./pyproject.toml
 USER app:app
 EXPOSE 5000

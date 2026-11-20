@@ -21,15 +21,16 @@ Planning doc: docs/planning.md
 ## Frontend rules
 - Vanilla HTML, CSS and JS only. No frameworks, no Tailwind, no chart library.
 - Charts are hand-written SVG in static/js/charts.
-- All colors, radii, blur and fonts come from static/css/tokens.css. Never hard-code them.
+- All colors, radii, blur and fonts come from app/static/css/tokens.css. Never hard-code them.
 - Theme: dark, black, glassy, silver. Monochrome. Amber, Jade and Rose are for booking status only. No purple.
 - Every glass surface needs a solid fallback. Respect prefers-reduced-motion. Keep focus rings visible and tap targets at least 44 px.
-- Pointer-following sheen and cursor-driven `--mx`/`--my` lighting are removed from glass, buttons, and slot keys. Keep the slowly drifting ambient background light and ordinary hover/press states.
+- Product surfaces are flat and use no gradients, SVG gradient paints, mask fades, or gradient-clipped text. Use solid Obsidian backgrounds, translucent glass with a 1 px hairline border, and no ambient light layer or drift animation.
+- Primary buttons and selected slot keys use flat Pearl. Selected slots use a 2 px Pearl ring without colored glows; charts use flat colors and five discrete heatmap steps.
 - Match Figma spacing, radii and states. If a state is missing in Figma, extend the nearest pattern and note it in docs/design/figma.md.
 - Shared template components are Jinja macros with explicit arguments and defaults. Never rely on variables inherited from the calling template; keep component inputs explicit so one component cannot change another through leaked template state.
 - No inline `<style>` blocks, style attributes, `setAttribute('style', ...)`, or inline event handlers. Use CSS classes, CSS files, external scripts, and `element.style.setProperty` only for dynamic values.
 - Do not use `data:` URIs for images or CSS backgrounds. SVG charts get their styling from CSS classes. Render QR codes as SVG DOM elements or serve them from an application-owned endpoint.
-- Run `python scripts/check_frontend_policy.py` before finishing frontend changes. CI runs this scanner and fails on inline styles, inline scripts, event handlers, or `data:` URIs in templates and static files.
+- Run `python scripts/check_frontend_policy.py` before finishing frontend changes. CI runs this scanner and fails on inline styles, inline scripts, event handlers, `data:` URIs, gradients, SVG gradient paints, and mask fades in templates and static files.
 - No inline `<style>` blocks, style attributes, `setAttribute('style', ...)`, or inline event handlers. Use CSS classes, CSS files, external scripts, and `element.style.setProperty` only for dynamic values.
 - Do not use `data:` URIs for images or CSS backgrounds. SVG charts get their styling from CSS classes. Render QR codes as SVG DOM elements or serve them from an application-owned endpoint.
 - Fonts must be self-hosted from `static/fonts`; frontend assets must not load from third-party hosts.

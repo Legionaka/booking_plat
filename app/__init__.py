@@ -44,7 +44,7 @@ def content_security_policy_for(endpoint: str | None) -> str:
 
 def create_app(test_config: dict[str, object] | None = None) -> Flask:
     """Create and configure the Flask application."""
-    app = Flask(__name__, static_folder="../static", static_url_path="/static")
+    app = Flask(__name__, static_folder="static", static_url_path="/static")
     app.config.from_object(Config)
     if test_config:
         app.config.update(test_config)
