@@ -103,7 +103,9 @@ def create_business():
 @login_required
 @_errors
 def get_business(business_id):
-    return _data(service.serialize_business(service.require_business(business_id)))
+    return _data(
+        service.serialize_business(service.require_business(business_id, ("owner", "staff")))
+    )
 
 
 @admin_bp.patch("/businesses/<int:business_id>")
@@ -224,7 +226,23 @@ def list_staff(business_id):
         limit,
         offset,
     )
-    return _data([service.serialize_staff(row) for row in rows])
+    assignments = db.session.execute(
+        select(staff_services.c.staff_id, staff_services.c.service_id)
+        .join(Service, Service.id == staff_services.c.service_id)
+        .where(
+            staff_services.c.staff_id.in_([row.id for row in rows]),
+            Service.business_id == business_id,
+        )
+    ).all()
+    assigned_by_staff = {}
+    for staff_id, service_id in assignments:
+        assigned_by_staff.setdefault(staff_id, []).append(service_id)
+    payloads = []
+    for row in rows:
+        payload = service.serialize_staff(row)
+        payload["service_ids"] = assigned_by_staff.get(row.id, [])
+        payloads.append(payload)
+    return _data(payloads)
 
 
 @admin_bp.post("/businesses/<int:business_id>/staff")

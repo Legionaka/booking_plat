@@ -733,6 +733,10 @@ def test_permission_matrix_and_customer_booking_reads(app, scenario):
     )
     assert listing.status_code == 200
     assert any(item["id"] == booking_id for item in listing.json["data"])
+    row = next(item for item in listing.json["data"] if item["id"] == booking_id)
+    assert row["customer_name"] == "User 0"
+    assert row["service_name"] == "Cut"
+    assert row["staff_name"] == "One"
     customer_list = customer.get("/api/me/bookings?filter=upcoming")
     assert customer_list.status_code == 200
     assert customer_list.json["data"][0]["business_timezone"] == "UTC"

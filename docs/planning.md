@@ -348,14 +348,14 @@ Keep routes thin and put logic in `services/`. That separation is what makes the
 | 1 | Schema, migrations, auth, services, working hours | Relational design, migrations, security basics |
 | 2 | Availability engine and booking flow | Algorithmic thinking, timezones, edge-case testing |
 | 3 | Double-booking constraint, cancel and reschedule rules | Concurrency, transactions, state machines |
-| 4 | Public booking page and owner dashboard | Frontend architecture, API consumption |
+| 4 | Customer booking page, owner and staff workspace | Frontend architecture, API consumption, data visualization |
 | 5 | Email and reminders through the queue | Background jobs, retries, idempotency |
 | 6 | PayFast deposits and webhooks | Third-party integration, signature verification |
 | 7 | Docker, CI, deployment, monitoring | DevOps fundamentals |
 | 8 | Multi-tenancy polish, audit log, analytics | System design, data isolation |
 | 9 | Public API, OpenAPI docs, Google Calendar OAuth | API design, OAuth |
 
-Phases 1 to 4 plus a live deployment is already a strong portfolio piece. Treat the rest as ongoing updates, and let the commit history show a product evolving.
+Phase 4 owner and staff screens are implemented against the existing admin, calendar, payments, and analytics APIs. The walk-in booking frame is deferred because the booking relation requires a registered customer; see [ADR 0005](decisions/0005-walk-in-booking.md). Detailed page routes and frame IDs are in [design/screens.md](design/screens.md). The remaining roadmap here is consolidated and corrected in the documentation phase.
 
 ## 12. Future updates
 

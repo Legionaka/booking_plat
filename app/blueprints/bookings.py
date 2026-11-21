@@ -8,7 +8,7 @@ from pydantic import ValidationError
 from sqlalchemy import select
 
 from app.extensions import db, limiter
-from app.models import Booking, Business, Membership, Payment, Service, Staff
+from app.models import Booking, Business, Membership, Payment, Service, Staff, User
 from app.schemas.booking import BookingAction, BookingCreate
 from app.security import login_required
 from app.services import bookings as service
@@ -334,9 +334,24 @@ def admin_bookings(business_id):
                 Booking.start_at >= bound if operator == ">=" else Booking.start_at <= bound
             )
     limit, offset = _page_args()
-    rows = (
-        db.session.execute(query.order_by(Booking.start_at).limit(limit).offset(offset))
-        .scalars()
-        .all()
-    )
-    return _data([service.serialize_booking(row) for row in rows])
+    rows = db.session.execute(
+        query.join(User, User.id == Booking.customer_id)
+        .join(Service, (Service.id == Booking.service_id) & (Service.business_id == business_id))
+        .join(Staff, (Staff.id == Booking.staff_id) & (Staff.business_id == business_id))
+        .add_columns(User.full_name, Service.name, Staff.display_name)
+        .order_by(Booking.start_at)
+        .limit(limit)
+        .offset(offset)
+    ).all()
+    payloads = []
+    for booking, customer_name, service_name, staff_name in rows:
+        payload = service.serialize_booking(booking)
+        payload.update(
+            {
+                "customer_name": customer_name,
+                "service_name": service_name,
+                "staff_name": staff_name,
+            }
+        )
+        payloads.append(payload)
+    return _data(payloads)

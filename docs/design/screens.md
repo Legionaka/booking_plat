@@ -20,3 +20,28 @@ Figma source: [Booking platform design](https://www.figma.com/design/u1iNRYeax7O
 | Waitlist full day, joined, slot opened | 390: `2:847`, `2:868`, `2:881`; 820: `2:4255`, `2:4295`, `2:4329`; 1440: `2:4228`, `2:4276`, `2:4308` | Deferred | Waitlist backend and outbox flow are assigned to Phase 6; no unsupported mock UI is presented as functional |
 
 All signed-in customer API calls pass through the shared fetch wrapper. A 401 opens the session-expired dialog and preserves a same-origin return path; 409 `slot_taken` offers a return to availability; 422, 429, 503, and network failures display inline guidance. Demo mode is read from `GET /api/config` and deposit copy states that demo payments are sandbox only.
+
+## Owner and staff portal frames
+
+Figma page inventories: `Owner • Live control room` (`2:1014`) and `Responsive • Owner and system states` (`2:4670`). The desktop page includes 1440 px frames; the responsive page includes 820 px and 390 px versions. All business pages use the shared `/app/{business_id}/{section}` shell, CSS breakpoints, and tenant-scoped APIs. The separate reduced-motion dashboard frame maps to the overview with system motion disabled. The flat-style override listed above applies to every owner frame.
+
+| Owner or staff frame | Figma IDs (desktop; tablet; mobile) | Route / implementation | APIs and states |
+|---|---|---|---|
+| Overview dashboard | `2:1015`, reduced motion `2:7225`; `2:4671`; `2:7532` | `/app/{business_id}/dashboard` | Analytics summary, timeseries, status mix, utilisation, current day calendar; loading/error/offline/empty and live current-time line |
+| Week view | `2:1347`; `2:4961`; `2:7794` | `/app/{business_id}/week` | Calendar/week and five-step booking density; previous/next week, no staff and no bookings states |
+| Payments | `2:1550`; `2:5143`; `2:7959` | `/app/{business_id}/payments` | Payments list, completed-revenue timeseries, status filter, paid-after-cancellation flag |
+| Services catalogue and editor | `2:1647`, editor `2:1788`, create `2:8957`; `2:5221`, editor `2:5273`; `2:8020`, editor `2:8054` | `/app/{business_id}/services`; dialog forms | Scoped list/create/edit/deactivate APIs; server-confirmed affected-booking warning; inactive and empty states |
+| Staff and editor | `2:1934`, editor `2:2064`; `2:5322`, editor `2:5365`; `2:8085`, editor `2:8110` | `/app/{business_id}/staff` | Scoped staff CRUD, service assignment checkboxes, deactivation affected-booking warning |
+| Working hours and time off | `2:2200`; `2:5406`; `2:8133` | `/app/{business_id}/hours` | Read/replace weekly windows, add/remove time off, empty schedules |
+| Customers and history | `2:2379`; `2:5466`; `2:8175` | `/app/{business_id}/customers` | Search, booking/no-show counts, scoped customer detail history |
+| Analytics | `2:1157`; `2:4790`; `2:7635` | `/app/{business_id}/analytics` | Summary and previous-period values, bookings and revenue timeseries, outcomes, status mix, weekday/hour heatmap, staff utilisation; date range and no-data states |
+| Settings and QR code | `2:2521`; `2:5523`; `2:8214` | `/app/{business_id}/settings` | Business profile/rules PATCH and protected `/app/{business_id}/qr.svg` generated with segno |
+| Audit log | `2:2668`; `2:5571`; `2:8244` | `/app/{business_id}/audit` | Tenant-scoped audit API; safe change diffs and empty state |
+| Bookings and status drawer | `2:2806`, pending `2:2940`, confirmed `2:2961`, completed `2:2982`; `2:5626`; `2:8281` | `/app/{business_id}/bookings` and native booking detail dialog | Calendar/list API, confirm, complete, no-show actions; status-specific actions |
+| Command palette | `2:3031`; shared responsive shell | Native dialog on all owner pages | Search and navigate to available workspace sections; keyboard Escape/return focus |
+| Date range popover | `2:8938`; responsive analytics filters | `/app/{business_id}/analytics` | Native date inputs and previous-period comparison |
+| Walk-in booking modal | `2:3003` | Deferred | Current booking creation requires a registered customer id. Supporting anonymous walk-ins would change the existing booking/customer relationship, so no partial UI or schema change was introduced; see ADR 0005. |
+
+Onboarding is implemented at `/app/onboarding` using existing business, service, staff, assignment, and working-hours APIs. It has four steps: business details, first service, staff and hours, and share link. There is no separate owner onboarding frame on the Owner page; this workflow extends the existing authentication/onboarding visual pattern. Staff membership navigation shows only overview, week, and bookings; the backend scopes calendar results to the staff member's own column and rejects owner-only APIs.
+
+SVG charts are hand-written in `static/js/charts/`, use solid palette strokes, and expose an accessible name. Empty datasets render without fabricated values. Ambient fields, gradients, colored glows, and decorative fades in the source Figma owner frames are omitted under the project flat-style rule.

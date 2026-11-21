@@ -13,6 +13,7 @@ Existing public token names were preserved. Values below now match Figma variabl
 | `--glass-floating-fill` | `surface/floating` | `#ffffff0f` | Pearl tinted 6% → white at 5.9% |
 | `--glass-border` | `surface/border` | `#ffffff1a` | Pearl tinted 10% → white at 10.2% |
 | `--glass-back` (added) | `surface/back` | `#ffffff0a` | Reusable translucent back surface |
+| `--scrim` (added) | modal backdrop | Obsidian at 72% | Shared dialog and palette backdrop |
 
 The named color tokens, display/UI font families, type scale, panel/card/control radii, and 24/28/32 px blur values already match Figma. `--r-small` and `--space-half` were added as structural tokens for compact details. Font files remain self-hosted.
 

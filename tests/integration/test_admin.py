@@ -129,6 +129,34 @@ def test_service_validation_audit_and_deactivated_public_catalog(client, app, em
             assert "secret" not in str(row.diff).lower()
 
 
+def test_staff_list_includes_business_scoped_service_assignments_and_booking_qr(
+    client, email_service
+):
+    signed_in(client, "owner@example.test", "Owner", email_service)
+    business = create_business(client, slug="qr-shop").json["data"]
+    base = f"/api/admin/businesses/{business['id']}"
+    service_row = client.post(
+        f"{base}/services",
+        json={"name": "Consultation", "duration_min": 30, "price_cents": 2500},
+    ).json["data"]
+    staff_row = client.post(f"{base}/staff", json={"display_name": "Ari"}).json["data"]
+    assert (
+        client.post(
+            f"{base}/staff/{staff_row['id']}/services/{service_row['id']}", json={}
+        ).status_code
+        == 200
+    )
+    listed = client.get(f"{base}/staff").json["data"]
+    assert next(row for row in listed if row["id"] == staff_row["id"])["service_ids"] == [
+        service_row["id"]
+    ]
+    qr = client.get(f"/app/{business['id']}/qr.svg")
+    assert qr.status_code == 200
+    assert qr.mimetype == "image/svg+xml"
+    assert "<svg" in qr.text
+    assert "qr-shop" not in qr.text
+
+
 def test_staff_roles_hours_time_off_and_atomic_week_replacement(
     client, app, email_service, monkeypatch
 ):

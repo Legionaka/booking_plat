@@ -2,7 +2,7 @@
 
 Base path: `/api`. JSON endpoints use `application/json`, except the PayFast ITN webhook, which accepts the provider's form payload. Authentication uses secure, HttpOnly session cookies. All tenant-owned reads and writes must be scoped to the active `business_id`; owner and staff endpoints require role checks.
 
-This document records the planned API surface from `docs/planning.md`. Request and response fields below are illustrative where the plan does not define a complete schema; validate and finalize them with the endpoint implementation.
+This document records the implemented API surface. Request and response fields below reflect the current schemas and handlers.
 
 ## Conventions
 
@@ -47,7 +47,7 @@ Invalid credentials always return `401` with `Email or password is incorrect.` U
 
 For availability reads, `staff=any` merges eligible staff. Slot generation considers working hours, service assignment, time off, active bookings, service duration and buffer, slot step, minimum notice, and maximum advance.
 
-Booking creation should accept the chosen service, staff (if selected), and slot start time. The server resolves the business, confirms availability, calculates the price/deposit, and creates either a `pending` booking with a hold expiry when a deposit is required or a `confirmed` booking when no deposit is required. Exact request field names are TBD.
+Booking creation accepts `service_id`, `staff_id` (an ID or `any`), and an offset-aware UTC `start_at`. The server resolves the business, confirms availability, calculates the price/deposit, and creates either a `pending` booking with a hold expiry when a deposit is required or a `confirmed` booking when no deposit is required.
 
 ## Customer bookings
 
@@ -141,6 +141,7 @@ Service and staff deactivation is soft; it preserves existing booking references
 - `GET|PUT /.../staff/{staff_id}/working-hours` replaces the whole weekly schedule on PUT
 - `GET|POST /.../staff/{staff_id}/time-off`; `DELETE /.../staff/{staff_id}/time-off/{time_off_id}`
 - Public active-only catalog reads: `GET /api/b/{slug}/services` and `/staff`.
+- Owner/staff administration `GET /api/admin/businesses/{business_id}/staff` includes a `service_ids` array on each row; each assigned service is filtered to the same business.
 
 ## Availability (slice 4)
 
@@ -160,7 +161,7 @@ The slots response contains the business `timezone` and `slots` with UTC `start_
 
 - `PATCH /api/bookings/{id}` accepts `action`: `cancel`, `reschedule` (with `start_at` and optional `staff_id`), `confirm`, `complete`, or `no_show`. Customer cancellation and rescheduling obey the business cutoff; business owners and the assigned staff can manage the booking.
 - `GET /api/me/bookings` lists the customer's bookings and accepts `filter=upcoming|past`, `limit` and `offset`; `GET /api/me/bookings/{id}` reads one owned booking. Both responses include `business_slug`, `business_name`, `business_timezone`, `cancel_cutoff_hours`, `service_name`, `service_duration_min`, and `staff_name` for the customer UI. These values are resolved through the booking's business scope.
-- `GET /api/admin/businesses/{id}/bookings` lists business bookings with optional `from`, `to`, `staff`, `status`, `limit` and `offset`. Owners see all business bookings; staff see only rows for their linked staff record.
+- `GET /api/admin/businesses/{id}/bookings` lists business bookings with optional `from`, `to`, `staff`, `status`, `limit` and `offset`. Owners see all business bookings; staff see only rows for their linked staff record. Each row includes customer, service, and staff display names resolved within the business scope.
 - `flask bookings expire-holds` cancels expired pending holds. Each create and state transition adds an audit row.
 
 Confirmed bookings write confirmation and due reminder notifications to the transactional outbox in the booking transaction. Pending bookings are not notified until confirmed. Delivery is handled by the RQ worker; see [jobs.md](jobs.md) for worker and scheduler commands, retry behavior, and notification contents.
@@ -190,6 +191,10 @@ Owner endpoints are scoped to the business in the URL; missing or cross-business
 - `GET /api/admin/businesses/{id}/audit-log` accepts `entity`, `actor`, `from`, `to`, `limit`, and `offset`. Secret fields and raw payment payloads are excluded.
 
 `flask seed-demo [--reset]` creates deterministic Fade Lab Barbers sample data in non-production environments. Demo credentials are configured with `DEMO_OWNER_EMAIL`, `DEMO_OWNER_PASSWORD`, and `DEMO_OWNER_NAME`; defaults are for local demos only.
+
+## Owner workspace HTML routes
+
+The workspace routes are `/app` (redirect to the first business or onboarding), `/app/onboarding`, and `/app/{business_id}/{dashboard|week|bookings|services|staff|hours|customers|payments|analytics|settings|audit}`. `/app/{business_id}/qr.svg` returns a protected SVG QR code for the public booking page. HTML access does not replace API role checks; data remains behind the tenant-scoped endpoints above. `GET /api/admin/businesses/{business_id}` is available to owners and business staff; `PATCH` remains owner-only. Staff navigation is limited to overview, week, and bookings, and calendar APIs return only their own staff column.
 
 ## Registered route coverage
 

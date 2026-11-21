@@ -106,6 +106,54 @@ def test_customer_portal_routes_render_responsive_flow_shell(
     assert client.get("/payments/return?booking_id=bad").status_code == 200
 
 
+def test_owner_portal_routes_render_external_script_shell(
+    app, monkeypatch, assert_rendered_page_contract
+):
+    monkeypatch.setattr(app.extensions["redis"], "delete", lambda *_args: 0)
+    client = app.test_client()
+    paths = (
+        ("/app", "dashboard"),
+        ("/app/onboarding", "onboarding"),
+        ("/app/42/dashboard", "dashboard"),
+        ("/app/42/week", "week"),
+        ("/app/42/bookings", "bookings"),
+        ("/app/42/services", "services"),
+        ("/app/42/staff", "staff"),
+        ("/app/42/hours", "hours"),
+        ("/app/42/customers", "customers"),
+        ("/app/42/payments", "payments"),
+        ("/app/42/analytics", "analytics"),
+        ("/app/42/settings", "settings"),
+        ("/app/42/audit", "audit"),
+    )
+    for path, section in paths:
+        response = client.get(path)
+        assert response.status_code == 200, path
+        assert f'data-section="{section}"' in response.text
+        assert 'style="' not in response.text
+        assert_rendered_page_contract(response.text, path)
+        assert 'src="/static/js/pages/owner.js"' in response.text
+    assert client.get("/app/42/qr.svg").status_code == 401
+
+
+def test_owner_chart_modules_are_external_flat_and_accessible():
+    root = Path(__file__).resolve().parents[2] / "app" / "static" / "js" / "charts"
+    expected = {
+        "sparkline.js": "BookingCharts.sparkline",
+        "area.js": "BookingCharts.area",
+        "donut.js": "BookingCharts.donut",
+        "heatmap.js": "BookingCharts.heatmap",
+        "ring.js": "BookingCharts.ring",
+    }
+    for filename, function in expected.items():
+        source = (root / filename).read_text(encoding="utf-8")
+        assert function in source
+        assert "gradient" not in source.lower()
+    source = (root / "svg.js").read_text(encoding="utf-8")
+    assert 'role: "img"' in source
+    assert '"aria-label": label' in source
+
+
 def test_payfast_csp_exception_is_exclusive_to_the_handoff_endpoint(app):
     endpoints = {rule.endpoint for rule in app.url_map.iter_rules()}
     assert "payments.payfast_handoff" in endpoints

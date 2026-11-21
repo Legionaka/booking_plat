@@ -15,7 +15,7 @@ The file has these confirmed pages:
 | --- | --- | --- |
 | Design system | `Design system` page; `Fade Lab • Design system` frame, node `2:121` | Verified; color tokens, ambient glass, typography, interactive components |
 | Customer portal | `Customer • Book in a minute` and `Customer • Desktop and tablet` | Verified; implemented in Phase 3 at mobile, tablet, and desktop widths; see [screens.md](screens.md) |
-| Owner and staff portal | `Owner • Live control room` and `Responsive • Owner and system states` | Verified; outside F1 |
+| Owner and staff portal | `Owner • Live control room` (`2:1014`) and `Responsive • Owner and system states` (`2:4670`) | Verified; implemented in Phase 4 at 390, 820, and 1440 px; see [screens.md](screens.md) |
 | Platform admin | `Platform admin • Operations` | Verified; admin sign-in frame has no matching backend role/route |
 | Authentication and onboarding | `F • Authentication and onboarding`, node `20:837` | Verified; full 181-frame index in [auth-frame-inventory.md](auth-frame-inventory.md) |
 | Emails | `Emails • Transactional` | Verified; outside F1 |
@@ -112,7 +112,7 @@ Error pages `/404`, `/500`, and `/offline` use the flat Obsidian and glass patte
 
 The customer frames are implemented through shared responsive templates. Their 390, 820, and 1440 px variants map to the same routes and are handled with CSS breakpoints. The only deferred customer frames are the full-day waitlist, waitlist-joined, and slot-opened states at all three widths. They need the waitlist table, endpoints, outbox flow, and acceptance rules assigned to Phase 6; see [screens.md](screens.md).
 
-The availability engine and booking endpoints should exist before the customer booking and owner dashboard screens are connected to real data. Until then, use fixture JSON matching `docs/api.md`.
+The customer and owner portals now use the implemented API endpoints. The platform-admin screens, email frame layouts, and customer waitlist frames remain deferred; see the relevant inventories and Phase 6 roadmap.
 
 ## Prototype flows to verify
 

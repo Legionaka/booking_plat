@@ -1,10 +1,11 @@
 """Server-rendered shells for the vanilla JavaScript frontend."""
 
-from flask import Blueprint, render_template, request
+from flask import Blueprint, Response, current_app, g, render_template, request
 from sqlalchemy import select
 
 from app.extensions import db
-from app.models import Business
+from app.models import Business, Membership
+from app.security import login_required
 
 web_bp = Blueprint("web", __name__)
 
@@ -61,9 +62,47 @@ def reset_page():
 
 
 @web_bp.get("/account")
-@web_bp.get("/app")
 def signed_in_placeholder():
     return render_template("auth/placeholder.html")
+
+
+@web_bp.get("/app")
+@web_bp.get("/app/onboarding")
+@web_bp.get("/app/<int:business_id>/<section>")
+def owner_portal(business_id=None, section="dashboard"):
+    allowed = {
+        "dashboard", "week", "bookings", "services", "staff", "hours",
+        "customers", "payments", "analytics", "settings", "audit",
+    }
+    if section not in allowed:
+        section = "dashboard"
+    onboarding = request.path.endswith("/onboarding")
+    return render_template(
+        "owner/portal.html",
+        business_id=business_id or "",
+        section="onboarding" if onboarding else section,
+    )
+
+
+@web_bp.get("/app/<int:business_id>/qr.svg")
+@login_required
+def booking_qr(business_id):
+    membership = db.session.get(Membership, (g.current_user.id, business_id))
+    if membership is None or membership.role != "owner":
+        return "Not found", 404
+    business = db.session.execute(
+        select(Business).where(Business.id == business_id)
+    ).scalar_one_or_none()
+    if business is None:
+        return "Not found", 404
+    import segno
+
+    public_base_url = str(current_app.config["PUBLIC_BASE_URL"]).rstrip("/")
+    qr = segno.make_qr(f"{public_base_url}/b/{business.slug}")
+    response = Response(qr.svg_inline(scale=5), mimetype="image/svg+xml")
+    response.headers["Cache-Control"] = "private, max-age=300"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    return response
 
 
 @web_bp.get("/offline")

@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block page_title %}Owner workspace · Booking platform{% endblock %}
+{% block content %}
+<div class="owner-app" data-owner-page data-business-id="{{ business_id }}" data-section="{{ section }}">
+  <aside class="owner-sidebar" aria-label="Business workspace navigation">
+    <a class="owner-brand" href="/app" data-business-name>Booking platform</a>
+    <p class="owner-sidebar__caption">Business workspace</p>
+    <nav class="owner-nav" aria-label="Workspace">
+      <a href="/app" data-nav-section="dashboard">Overview</a>
+      <a href="/app" data-nav-section="week">Week view</a>
+      <a href="/app" data-nav-section="bookings">Bookings</a>
+      <a href="/app" data-nav-section="services">Services</a>
+      <a href="/app" data-nav-section="staff">Staff</a>
+      <a href="/app" data-nav-section="hours">Working hours</a>
+      <a href="/app" data-nav-section="customers">Customers</a>
+      <a href="/app" data-nav-section="payments">Payments</a>
+      <a href="/app" data-nav-section="analytics">Analytics</a>
+      <a href="/app" data-nav-section="settings">Settings</a>
+      <a href="/app" data-nav-section="audit">Audit log</a>
+    </nav>
+    <button type="button" class="button button--secondary owner-signout" data-signout>Sign out</button>
+  </aside>
+  <div class="owner-main">
+    <header class="owner-topbar">
+      <p class="owner-breadcrumb"><span data-business-name>Workspace</span><span aria-hidden="true"> / </span><span data-section-label>Overview</span></p>
+      <button class="button button--secondary" type="button" data-command-open>Search workspace <kbd>Ctrl K</kbd></button>
+      <button class="button button--primary" type="button" data-create-booking>+ Add booking</button>
+    </header>
+    <div class="owner-notice" data-owner-notice role="status" aria-live="polite" hidden></div>
+    <section class="owner-content" data-owner-content aria-live="polite">
+      <p class="owner-loading">Loading your workspace…</p>
+    </section>
+  </div>
+  <dialog class="owner-dialog" data-owner-dialog aria-labelledby="owner-dialog-title">
+    <form method="dialog" class="owner-dialog__close"><button class="button button--secondary" type="submit" aria-label="Close dialog">Close</button></form>
+    <div data-owner-dialog-content></div>
+  </dialog>
+  <dialog class="command-palette" data-owner-palette aria-label="Search workspace">
+    <label for="owner-command-input">Search pages and actions</label>
+    <input id="owner-command-input" type="search" data-command-input>
+    <nav data-command-results aria-label="Search results"></nav>
+  </dialog>
+</div>
+{% endblock %}
+{% block page_scripts %}
+<script src="{{ url_for('static', filename='js/charts/svg.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/charts/sparkline.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/charts/area.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/charts/donut.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/charts/heatmap.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/charts/ring.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/pages/owner.js') }}" defer></script>
+{% endblock %}

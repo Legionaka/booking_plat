@@ -11,3 +11,4 @@ alembic>=1.15,<2
 rq>=2.3,<3
 gunicorn>=23,<24
 sentry-sdk[flask]>=2,<3
+segno>=1.6,<2
