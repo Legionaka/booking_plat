@@ -64,3 +64,8 @@ def reset_page():
 @web_bp.get("/app")
 def signed_in_placeholder():
     return render_template("auth/placeholder.html")
+
+
+@web_bp.get("/offline")
+def offline_page():
+    return render_template("errors/offline.html")

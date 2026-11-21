@@ -18,6 +18,19 @@ def test_components_page_and_frontend_assets_are_served_with_strict_csp(
     assert 'id="glass-depths"' in response.text
     assert 'id="type-scale"' in response.text
     assert 'id="colour-tokens"' in response.text
+    for label in (
+        "Buttons and slots",
+        "Status badges",
+        "Input, select and textarea",
+        "Toast and empty state",
+        "Modal, drawer and command palette",
+        "Tabs and dropdown",
+        "Table and pagination",
+        "KPI and chart card",
+        "Skeleton, avatar and stepper",
+        "Navigation shells",
+    ):
+        assert label in response.text
     assert "Bricolage Grotesque" in response.text
     assert "Instrument Sans" in response.text
     policy = response.headers["Content-Security-Policy"]
@@ -34,7 +47,9 @@ def test_components_page_and_frontend_assets_are_served_with_strict_csp(
         "css/glass.css",
         "css/typography.css",
         "css/layout.css",
+        "css/components/system.css",
         "js/main.js",
+        "js/components/surfaces.js",
         "fonts/bricolage-grotesque-v9-latin-regular.woff2",
         "fonts/instrument-sans-v4-latin-regular.woff2",
     )
@@ -46,6 +61,19 @@ def test_components_page_and_frontend_assets_are_served_with_strict_csp(
     assert "pointermove" not in main_js
     assert "--mx" not in main_js
     assert "--my" not in main_js
+
+
+def test_flat_error_pages_are_rendered(app, monkeypatch, assert_rendered_page_contract):
+    monkeypatch.setattr(app.extensions["redis"], "delete", lambda *_args: 0)
+    client = app.test_client()
+    missing = client.get("/page-does-not-exist")
+    offline = client.get("/offline")
+    assert missing.status_code == 404
+    assert offline.status_code == 200
+    assert_rendered_page_contract(missing.text, "/404")
+    assert_rendered_page_contract(offline.text, "/offline")
+    assert "We can’t find that page." in missing.text
+    assert "You’re offline right now." in offline.text
 
 
 def test_payfast_csp_exception_is_exclusive_to_the_handoff_endpoint(app):

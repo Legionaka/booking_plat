@@ -93,6 +93,21 @@ Flat-style override: the global product rule removes gradients, SVG gradient pai
 6. Remaining owner and staff screens.
 7. Platform admin, system states, and email templates.
 
+## Phase 2 component coverage
+
+The Design system page's component and data-state frames are represented on `/dev/components`: `Fade Lab • Design system` (`2:121`), `Charts • SVG library and data states` (`2:281`), and `Solid fallback • Accessible surfaces` (`2:8789`). Reusable markup is in `components/ui.html`; visual styles are in `static/css/components/system.css` and use the shared token palette.
+
+| Figma concept | Implemented pattern | State coverage |
+|---|---|---|
+| Buttons and selected slot | `button.html`, `ui.html` slot key | Ready, hover, keyboard focus, selected, disabled, loading |
+| Status and form controls | status badge, labeled input, select, textarea | Status label plus icon, helper, invalid, disabled, focus |
+| Toast, modal and drawer | explicit Jinja macros and native dialogs | Info/success/error, focus trap, Escape, close and restore focus |
+| Tabs, table, pagination and dropdown | explicit Jinja macros | Selected tab, empty table, disabled paging, expanded menu |
+| KPI, chart, skeleton and empty state | explicit Jinja macros | Data summary, chart description, loading, empty |
+| Avatar, stepper, command palette and nav shells | explicit Jinja macros | Initials fallback, current/completed steps, search shell, active navigation |
+
+Error pages `/404`, `/500`, and `/offline` use the flat Obsidian and glass patterns. Missing responsive, data, and interaction states extend the nearest Figma component pattern; the component sheet is the reference for those states.
+
 The availability engine and booking endpoints should exist before the customer booking and owner dashboard screens are connected to real data. Until then, use fixture JSON matching `docs/api.md`.
 
 ## Prototype flows to verify

@@ -270,7 +270,17 @@ def create_app(test_config: dict[str, object] | None = None) -> Flask:
     def not_found(error):
         if request.path.startswith("/api/"):
             return jsonify({"error": {"code": "not_found", "message": "Not found."}}), 404
-        return error.get_response()
+        from flask import render_template
+
+        return render_template("errors/404.html"), 404
+
+    @app.errorhandler(500)
+    def internal_error(error):
+        if request.path.startswith("/api/"):
+            return jsonify({"error": {"code": "internal_error", "message": "Server error."}}), 500
+        from flask import render_template
+
+        return render_template("errors/500.html"), 500
 
     @app.errorhandler(405)
     def method_not_allowed(error):
