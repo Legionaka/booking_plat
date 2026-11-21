@@ -28,6 +28,7 @@ from app.models import (
 from app.services import bookings as booking_service
 from app.services import notification_jobs
 from app.services import payments as payment_service
+from app.services.email import EmailDeliveryError
 from app.services.payfast import format_cents, generate_form_signature
 from psycopg.types.range import Range
 from sqlalchemy import select
@@ -1045,6 +1046,37 @@ def test_failed_notification_retries_five_times_then_marks_failed(
         job = queue.fetch_job(f"notification-{notification_id}")
         assert job.meta["notification_attempts"] == 5
     assert notification_jobs._retry_policy().max == 4
+
+
+def test_permanent_email_api_failure_marks_outbox_failed_without_retry(
+    app, scenario, email_service, monkeypatch
+):
+    client, csrf = client_for(app, scenario["users"][0])
+    slot = available_slots(client, scenario)[0]
+    created = post_booking(client, csrf, scenario, slot["start_at"])
+    booking_id = created.json["data"]["id"]
+
+    def reject_permanently(*_args, **_kwargs):
+        raise EmailDeliveryError(
+            "Email provider returned HTTP 401", retryable=False, status_code=401
+        )
+
+    monkeypatch.setattr(email_service, "send_notification_email", reject_permanently)
+    with app.app_context():
+        notification_id = db.session.execute(
+            select(Notification.id).where(
+                Notification.booking_id == booking_id, Notification.kind == "confirmation"
+            )
+        ).scalar_one()
+        db.session.execute(
+            Notification.__table__.update()
+            .where(Notification.id == notification_id)
+            .values(scheduled_for=datetime.now(UTC) - timedelta(seconds=1))
+        )
+        db.session.commit()
+
+        assert notification_jobs.send_notification(notification_id) == "failed"
+        assert db.session.get(Notification, notification_id).status == "failed"
 
 
 def test_cancellation_does_not_cancel_the_new_cancellation_notification(app, scenario):

@@ -68,6 +68,12 @@ class Config:
     RATELIMIT_KEY_PREFIX = os.getenv("RATELIMIT_KEY_PREFIX", "booking-platform:")
     RATELIMIT_IN_MEMORY_FALLBACK_ENABLED = False
     EMAIL_BACKEND = os.getenv("EMAIL_BACKEND", "console")
+    EMAIL_PROVIDER = os.getenv("EMAIL_PROVIDER", "resend").lower()
+    EMAIL_API_KEY = os.getenv("EMAIL_API_KEY", "")
+    EMAIL_FROM_ADDRESS = os.getenv("EMAIL_FROM_ADDRESS", "")
+    EMAIL_FROM_NAME = os.getenv("EMAIL_FROM_NAME", "Booking Platform")
+    EMAIL_MAILGUN_DOMAIN = os.getenv("EMAIL_MAILGUN_DOMAIN", "")
+    EMAIL_MAILGUN_REGION = os.getenv("EMAIL_MAILGUN_REGION", "us").lower()
     SESSION_COOKIE_NAME = "booking_session"
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = "Lax"

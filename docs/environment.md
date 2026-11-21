@@ -20,13 +20,19 @@ Production startup validates every required value below before serving requests.
 | `REDIS_URL` | Yes, managed Redis URL | `redis://localhost:6379/0` | Sessions, RQ queue, and scheduler coordination. |
 | `RATELIMIT_STORAGE_URI` | Yes, managed Redis URL | `redis://localhost:6379/1` | Shared Flask-Limiter storage. |
 | `RATELIMIT_KEY_PREFIX` | No | `booking-platform:` | Prefix isolates rate-limit keys. |
-| `EMAIL_BACKEND` | Yes (`smtp`) | `console` | Email delivery backend; production console delivery is refused. |
-| `SMTP_HOST` | Yes | empty | SMTP server hostname. |
+| `EMAIL_BACKEND` | Yes (`smtp` or `http_api`) | `console` | Email delivery backend; production console delivery is refused. |
+| `EMAIL_PROVIDER` | Yes when `http_api` is selected | `resend` | HTTPS email provider: `brevo`, `resend`, or `mailgun`. |
+| `EMAIL_API_KEY` | Yes when `http_api` is selected | empty | Provider API key; use a sending-scoped key where the provider supports it. This is not an SMTP password/token. |
+| `EMAIL_FROM_ADDRESS` | Yes when `http_api` is selected | empty | Verified sender address. |
+| `EMAIL_FROM_NAME` | No | `Booking Platform` | Display name for HTTPS email providers. |
+| `EMAIL_MAILGUN_DOMAIN` | Yes for Mailgun | empty | Verified Mailgun sending domain. |
+| `EMAIL_MAILGUN_REGION` | No | `us` | Mailgun API region: `us` or `eu`. |
+| `SMTP_HOST` | Yes when `EMAIL_BACKEND=smtp` | empty | SMTP server hostname. |
 | `SMTP_PORT` | No | `587` | SMTP server port. |
 | `SMTP_USERNAME` | No | empty | SMTP authentication user when required by provider. |
 | `SMTP_PASSWORD` | No | empty | SMTP authentication password when required by provider. |
-| `SMTP_FROM_ADDRESS` | Yes | empty | Verified sender address. |
-| `SMTP_TLS_MODE` | Yes (`starttls` or `ssl`) | `starttls` | Use SMTP STARTTLS on the configured port (typically 587) or implicit SSL (typically 465). TLS cannot be disabled in production. |
+| `SMTP_FROM_ADDRESS` | Yes when `EMAIL_BACKEND=smtp` | empty | SMTP sender address. |
+| `SMTP_TLS_MODE` | Yes when `EMAIL_BACKEND=smtp` (`starttls` or `ssl`) | `starttls` | Use SMTP STARTTLS on the configured port (typically 587) or implicit SSL (typically 465). TLS cannot be disabled in production. |
 | `SMTP_TIMEOUT_SECONDS` | No | `10` | SMTP connection timeout. |
 | `MIGRATE_ON_STARTUP` | No | `false` | When true, the web container applies Alembic migrations before starting Gunicorn, under a PostgreSQL advisory lock. |
 | `SEED_DEMO_ON_STARTUP` | No (`false` in production) | `false` | When true, the web entrypoint runs migrations and seeds Fade Lab under the same PostgreSQL advisory lock. Requires `DEMO_MODE=true` and a non-default `DEMO_OWNER_PASSWORD` environment value. |

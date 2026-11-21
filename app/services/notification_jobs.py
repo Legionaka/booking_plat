@@ -13,6 +13,7 @@ from sqlalchemy import select
 from app.extensions import db
 from app.models import Booking, Business, Membership, Notification, Service, Staff, User
 from app.services.bookings import expire_holds
+from app.services.email import EmailDeliveryError
 
 MAX_NOTIFICATION_ATTEMPTS = 5
 RETRY_INTERVALS_SECONDS = (60, 300, 900, 900)
@@ -225,6 +226,9 @@ def send_notification(notification_id: int) -> str:
             attempts,
             type(exc).__name__,
         )
+        if isinstance(exc, EmailDeliveryError) and not exc.retryable:
+            _mark_failed(notification_id)
+            return "failed"
         if attempts >= MAX_NOTIFICATION_ATTEMPTS:
             _mark_failed(notification_id)
         else:

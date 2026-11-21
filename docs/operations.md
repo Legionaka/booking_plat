@@ -30,7 +30,21 @@ For an inbox UI, replace the existing email/SMTP settings in `.env` with the opt
 docker compose --profile dev up
 ```
 
-Open [http://127.0.0.1:8025](http://127.0.0.1:8025). Open the verification or reset message and use the link in its plain-text body. Mailpit is optional, is excluded from the production image and Render configuration, and publishes SMTP/UI ports on `127.0.0.1` only. Production configuration continues to require SMTP STARTTLS or SSL.
+Open [http://127.0.0.1:8025](http://127.0.0.1:8025). Open the verification or reset message and use the link in its plain-text body. Mailpit is optional, is excluded from the production image and Render configuration, and publishes SMTP/UI ports on `127.0.0.1` only. When production uses SMTP, startup requires STARTTLS or SSL.
+
+### HTTPS email on Render Free
+
+Render Free web services block outbound SMTP traffic on ports 25, 465, and 587, so an SMTP provider cannot deliver mail from a free web service. Keep SMTP for local development, Mailpit, and hosts that permit SMTP. On Render Free set `EMAIL_BACKEND=http_api`; the API implementation uses verified HTTPS on port 443 and a 10 second timeout. Render documents the blocked SMTP ports in its [Free web services limits](https://render.com/docs/free).
+
+Select a provider with `EMAIL_PROVIDER`. In each provider dashboard, configure and verify a sender/domain first, create a sending API key, and put it in `EMAIL_API_KEY` in Render's secret settings. Set `EMAIL_FROM_ADDRESS` to the verified sender and `EMAIL_FROM_NAME` to the desired display name. Do not use an SMTP password or SMTP token as the API key.
+
+| Provider | Setup | Credential and provider settings |
+| --- | --- | --- |
+| Brevo | Create a Brevo API key, register and verify the sender, then select `EMAIL_PROVIDER=brevo`. | Use an API key (typically `xkeysib-…`), not the separate SMTP key. Brevo's free plan currently allows 300 sends/day; check transactional sending status, sender verification, and limits in the dashboard. See [Brevo's transactional send API](https://developers.brevo.com/docs/send-a-transactional-email), [sender setup](https://developers.brevo.com/docs/getting-started-with-senders-and-domains), and [free-plan limits](https://help.brevo.com/hc/en-us/articles/208580669-FAQs-What-are-the-limits-of-the-Free-plan). |
+| Resend | Add and verify a sending domain, create a sending-scoped API key, then select `EMAIL_PROVIDER=resend`. | Use the Resend API key (typically `re_…`) in `EMAIL_API_KEY`. Its listed free plan currently includes 3,000 emails/month and a 100/day limit; check current quotas and domain status in the dashboard. See [Resend pricing](https://resend.com/pricing) and [API key permissions](https://resend.com/changelog/new-api-key-permissions). |
+| Mailgun | Add and verify a sending domain, create a Domain Sending Key where available, then select `EMAIL_PROVIDER=mailgun`. | Use a Mailgun API key, not SMTP credentials. Set `EMAIL_MAILGUN_DOMAIN` and `EMAIL_MAILGUN_REGION=us` or `eu` to match its region. Its listed free plan currently includes 100 messages/day; check authorized-recipient restrictions, domain verification, retention, and account quota. See [Mailgun's message API](https://documentation.mailgun.com/docs/mailgun/api-reference/send/mailgun/messages), [domain verification](https://documentation.mailgun.com/docs/mailgun/user-manual/domains/domains-verify), and [free-plan limits](https://help.mailgun.com/hc/en-us/articles/203068914-What-does-the-Free-plan-offer). |
+
+Changing providers requires changing `EMAIL_PROVIDER` and the matching API key/sender settings, then redeploying. Keep `EMAIL_BACKEND=smtp` for local SMTP/Mailpit or paid hosts where SMTP egress is permitted. The HTTP service logs provider, status, and a masked recipient only; API keys, full recipient addresses, and message bodies are never logged. 429 and 5xx responses and network timeouts are retried by the outbox; 401, 403, and other 4xx responses are marked failed without retry.
 
 
 ## Dependency updates and local verification
@@ -72,7 +86,7 @@ The run saves full-page screenshots for each auth page at 1440, 820, and 390 px,
 
 Create a Render Blueprint from `render.yaml`. The web service's `preDeployCommand` applies migrations before the new web process starts; Render requires a paid compute plan for pre-deploy commands. The Blueprint uses a Frankfurt web service, background worker, scheduler, managed PostgreSQL database, and managed Key Value (Redis) service. See [Render's Blueprint reference](https://render.com/docs/blueprint-spec) for current resource fields and plan choices.
 
-Fill the secret placeholders in the `booking-platform-production` environment group: SMTP host/from address (and credentials if required), the public HTTPS app URL for both URL settings, and live PayFast merchant ID/key/passphrase. Render generates `SECRET_KEY`. Add `SENTRY_DSN` only if you have a Sentry project. Set the `TRUSTED_PROXY_HOPS` value to the actual proxy count for the chosen host. Attach a custom domain in Render and update its DNS records at your registrar; replace the README CI badge's `OWNER/REPOSITORY` with the GitHub repository path. Do not commit these values.
+Fill the secret placeholders in the `booking-platform-production` environment group: HTTPS email API key and verified sender address, public HTTPS app URL for both URL settings, and live PayFast merchant ID/key/passphrase. The blueprint defaults to Resend; for Brevo or Mailgun, change `EMAIL_PROVIDER` and configure its API key. For Mailgun, also set its verified domain and region. Render generates `SECRET_KEY`. Add `SENTRY_DSN` only if you have a Sentry project. Set `TRUSTED_PROXY_HOPS` to the actual proxy count for the chosen host. Attach a custom domain in Render and update its DNS records at your registrar; replace the README CI badge's `OWNER/REPOSITORY` with the GitHub repository path. Do not commit these values.
 
 ## PostgreSQL backup and restore
 

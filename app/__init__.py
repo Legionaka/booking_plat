@@ -71,6 +71,34 @@ def create_app(test_config: dict[str, object] | None = None) -> Flask:
                     "are not allowed."
                 )
 
+        email_backend = app.config.get("EMAIL_BACKEND")
+        if email_backend == "smtp":
+            required_email = {
+                "SMTP_HOST": bool(app.config.get("SMTP_HOST")),
+                "SMTP_FROM_ADDRESS": bool(app.config.get("SMTP_FROM_ADDRESS")),
+                "SMTP_TLS_MODE": app.config.get("SMTP_TLS_MODE") in {"starttls", "ssl"},
+                "SMTP_CREDENTIALS": not (
+                    bool(app.config.get("SMTP_USERNAME"))
+                    != bool(app.config.get("SMTP_PASSWORD"))
+                ),
+            }
+        elif email_backend == "http_api":
+            provider = app.config.get("EMAIL_PROVIDER")
+            required_email = {
+                "EMAIL_PROVIDER": provider in {"brevo", "resend", "mailgun"},
+                "EMAIL_API_KEY": bool(app.config.get("EMAIL_API_KEY")),
+                "EMAIL_FROM_ADDRESS": bool(app.config.get("EMAIL_FROM_ADDRESS")),
+            }
+            if provider == "mailgun":
+                required_email["EMAIL_MAILGUN_DOMAIN"] = bool(
+                    app.config.get("EMAIL_MAILGUN_DOMAIN")
+                )
+                required_email["EMAIL_MAILGUN_REGION"] = app.config.get(
+                    "EMAIL_MAILGUN_REGION"
+                ) in {"us", "eu"}
+        else:
+            required_email = {"EMAIL_BACKEND": False}
+
         required = {
             "SECRET_KEY": app.config.get("SECRET_KEY")
             not in {DEFAULT_SECRET_KEY, "replace-with-a-long-random-value", ""},
@@ -83,14 +111,6 @@ def create_app(test_config: dict[str, object] | None = None) -> Flask:
             "REDIS_URL": app.config.get("REDIS_URL") not in {None, "", "redis://localhost:6379/0"},
             "RATELIMIT_STORAGE_URI": app.config.get("RATELIMIT_STORAGE_URI")
             not in {None, "", "redis://localhost:6379/1"},
-            "EMAIL_BACKEND": app.config.get("EMAIL_BACKEND") == "smtp",
-            "SMTP_HOST": bool(app.config.get("SMTP_HOST")),
-            "SMTP_FROM_ADDRESS": bool(app.config.get("SMTP_FROM_ADDRESS")),
-            "SMTP_TLS_MODE": app.config.get("SMTP_TLS_MODE") in {"starttls", "ssl"},
-            "SMTP_CREDENTIALS": not (
-                bool(app.config.get("SMTP_USERNAME"))
-                != bool(app.config.get("SMTP_PASSWORD"))
-            ),
             "SESSION_COOKIE_SECURE": bool(app.config.get("SESSION_COOKIE_SECURE")),
             "PUBLIC_BASE_URL": str(app.config.get("PUBLIC_BASE_URL", "")).startswith("https://"),
             "BOOKING_MANAGE_BASE_URL": str(
@@ -104,6 +124,7 @@ def create_app(test_config: dict[str, object] | None = None) -> Flask:
             "DEMO_OWNER_PASSWORD": bool(app.config.get("DEMO_OWNER_PASSWORD"))
             and app.config.get("DEMO_OWNER_PASSWORD") != DEFAULT_DEMO_OWNER_PASSWORD,
         }
+        required.update(required_email)
         missing = [name for name, configured in required.items() if not configured]
         if missing:
             raise RuntimeError(
@@ -139,7 +160,9 @@ def create_app(test_config: dict[str, object] | None = None) -> Flask:
         key_prefix=app.config.get("SERVER_SESSION_KEY_PREFIX", "booking-platform:session:"),
         ttl_seconds=app.config["SERVER_SESSION_TTL_SECONDS"],
     )
-    app.extensions["email_service"] = build_email_service(app.config["EMAIL_BACKEND"])
+    app.extensions["email_service"] = build_email_service(
+        app.config["EMAIL_BACKEND"], app.config
+    )
     install_csrf_protection(app)
 
     @app.before_request

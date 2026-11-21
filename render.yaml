@@ -95,19 +95,19 @@ envVarGroups:
       - key: SECRET_KEY
         generateValue: true
       - key: EMAIL_BACKEND
-        value: smtp
-      - key: SMTP_HOST
+        value: http_api
+      - key: EMAIL_PROVIDER
+        value: resend
+      - key: EMAIL_API_KEY
         sync: false
-      - key: SMTP_PORT
-        value: "587"
-      - key: SMTP_USERNAME
+      - key: EMAIL_FROM_ADDRESS
         sync: false
-      - key: SMTP_PASSWORD
-        sync: false
-      - key: SMTP_FROM_ADDRESS
-        sync: false
-      - key: SMTP_TLS_MODE
-        value: starttls
+      - key: EMAIL_FROM_NAME
+        value: Booking Platform
+      - key: EMAIL_MAILGUN_DOMAIN
+        value: ""
+      - key: EMAIL_MAILGUN_REGION
+        value: us
       - key: SESSION_COOKIE_SECURE
         value: "true"
       - key: PUBLIC_BASE_URL
