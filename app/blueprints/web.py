@@ -69,3 +69,58 @@ def signed_in_placeholder():
 @web_bp.get("/offline")
 def offline_page():
     return render_template("errors/offline.html")
+
+
+@web_bp.get("/b/<slug>")
+@web_bp.get("/b/<slug>/book")
+@web_bp.get("/b/<slug>/book/time")
+@web_bp.get("/b/<slug>/book/review")
+@web_bp.get("/b/<slug>/book/confirmed/<int:booking_id>")
+def customer_booking_page(slug, booking_id=None):
+    view = "landing"
+    if request.path.endswith("/book"):
+        view = "services"
+    elif request.path.endswith("/book/time"):
+        view = "time"
+    elif request.path.endswith("/book/review"):
+        view = "review"
+    elif booking_id is not None:
+        view = "confirmed"
+    return render_template(
+        "customer/portal.html", view=view, slug=slug, booking_id=booking_id
+    )
+
+
+@web_bp.get("/account/bookings")
+@web_bp.get("/account/bookings/<int:booking_id>")
+@web_bp.get("/account/bookings/<int:booking_id>/reschedule")
+@web_bp.get("/account/bookings/<int:booking_id>/rescheduled")
+@web_bp.get("/account/bookings/<int:booking_id>/cancel")
+@web_bp.get("/account/bookings/<int:booking_id>/cancelled")
+def customer_account_page(booking_id=None):
+    view = "bookings"
+    if request.path.endswith("/rescheduled"):
+        view = "rescheduled"
+    elif request.path.endswith("/cancelled"):
+        view = "cancelled"
+    elif request.path.endswith("/reschedule"):
+        view = "reschedule"
+    elif request.path.endswith("/cancel"):
+        view = "cancel"
+    elif booking_id is not None:
+        view = "detail"
+    return render_template(
+        "customer/portal.html", view=view, booking_id=booking_id
+    )
+
+
+@web_bp.get("/payments/return")
+@web_bp.get("/payments/cancel")
+def customer_payment_return():
+    cancelled = request.path.endswith("/cancel")
+    booking_id = request.args.get("booking_id", "")
+    return render_template(
+        "customer/portal.html",
+        view="payment_cancelled" if cancelled else "payment_return",
+        booking_id=booking_id if booking_id.isdecimal() else "",
+    )

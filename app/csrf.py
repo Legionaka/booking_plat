@@ -19,6 +19,8 @@ def install_csrf_protection(app: Flask) -> None:
 
         expected = session.get("_csrf_token")
         supplied = request.headers.get("X-CSRF-Token", "")
+        if request.path.startswith("/payments/handoff/") and request.method == "POST":
+            supplied = supplied or request.form.get("csrf_token", "")
         if not expected or not hmac.compare_digest(str(expected), supplied):
             return (
                 jsonify(

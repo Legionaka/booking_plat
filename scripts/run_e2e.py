@@ -34,9 +34,7 @@ def prepare_test_databases(database_url: str, migration_url: str) -> None:
         engine.dispose()
 
 
-def wait_until_ready(
-    base_url: str, process: subprocess.Popen[bytes], log_path: Path
-) -> None:
+def wait_until_ready(base_url: str, process: subprocess.Popen[bytes], log_path: Path) -> None:
     deadline = time.monotonic() + 90
     last_response = "no HTTP response"
     while time.monotonic() < deadline:
@@ -94,6 +92,12 @@ def main() -> int:
     prepare_test_databases(database_url, migration_url)
     subprocess.run(
         [sys.executable, "-m", "flask", "--app", "app:create_app", "db", "upgrade"],
+        cwd=ROOT,
+        env=server_env,
+        check=True,
+    )
+    subprocess.run(
+        [sys.executable, "-m", "flask", "--app", "app:create_app", "seed-demo", "--reset"],
         cwd=ROOT,
         env=server_env,
         check=True,

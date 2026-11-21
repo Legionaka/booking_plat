@@ -159,7 +159,7 @@ The slots response contains the business `timezone` and `slots` with UTC `start_
 `HOLD_MINUTES` defaults to 15, `MAX_PENDING_HOLDS_PER_USER` defaults to 3 and `BOOKING_CREATE_RATE_LIMIT` defaults to 10 per minute.
 
 - `PATCH /api/bookings/{id}` accepts `action`: `cancel`, `reschedule` (with `start_at` and optional `staff_id`), `confirm`, `complete`, or `no_show`. Customer cancellation and rescheduling obey the business cutoff; business owners and the assigned staff can manage the booking.
-- `GET /api/me/bookings` lists the customer's bookings and accepts `filter=upcoming|past`, `limit` and `offset`; `GET /api/me/bookings/{id}` reads one owned booking.
+- `GET /api/me/bookings` lists the customer's bookings and accepts `filter=upcoming|past`, `limit` and `offset`; `GET /api/me/bookings/{id}` reads one owned booking. Both responses include `business_slug`, `business_name`, `business_timezone`, `cancel_cutoff_hours`, `service_name`, `service_duration_min`, and `staff_name` for the customer UI. These values are resolved through the booking's business scope.
 - `GET /api/admin/businesses/{id}/bookings` lists business bookings with optional `from`, `to`, `staff`, `status`, `limit` and `offset`. Owners see all business bookings; staff see only rows for their linked staff record.
 - `flask bookings expire-holds` cancels expired pending holds. Each create and state transition adds an audit row.
 
@@ -170,6 +170,10 @@ Confirmed bookings write confirmation and due reminder notifications to the tran
 - `POST /api/bookings/{id}/pay` requires the booking owner's logged-in session and CSRF token. It reuses a pending PayFast payment for that booking, extends the pending hold by at least `PAYMENT_HOLD_MINUTES`, and returns the PayFast action URL plus signed form fields.
 - `POST /api/payments/payfast/itn` accepts PayFast's public form-encoded callback. It verifies the ordered signature, source IP, merchant, payment reference, amount, and PayFast server validation before changing payment or booking state. Only ITN confirmation confirms a booking; the browser return URL never does.
 - `GET /api/me/bookings/{id}` includes `payment_status` for the latest PayFast payment, or `null` when payment has not started.
+
+The HTML client routes are `/b/{slug}` (business landing), `/b/{slug}/book` (service and staff selection), `/b/{slug}/book/time`, `/b/{slug}/book/review`, `/b/{slug}/book/confirmed/{booking_id}`, `/account/bookings`, `/account/bookings/{booking_id}`, `/account/bookings/{booking_id}/reschedule`, `/account/bookings/{booking_id}/cancel`, and the reschedule/cancel success pages. `/payments/return` polls the owned booking and payment status; it never changes booking state. `/payments/cancel` explains that checkout was not completed. All pages fetch product data from the API.
+
+The PayFast handoff accepts the synchronizer token in `X-CSRF-Token` for scripted requests or a `csrf_token` form field for the customer browser's POST navigation. That form-field exception is limited to `/payments/handoff/{booking_id}`; all other state-changing requests use the header.
 - `GET /api/admin/businesses/{id}/payments` is owner-only and supports `status`, `from`, `to`, `limit`, and `offset` filters.
 
 See [payments.md](payments.md) for signature details, ITN ordering, sandbox tunnel setup, and handling late payments that require a manual refund.

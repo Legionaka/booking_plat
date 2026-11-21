@@ -216,6 +216,9 @@ def seed_demo(*, reset: bool = False) -> dict[str, int]:
             for slot_index, local_time in enumerate(
                 (time(9), time(10, 30), time(12), time(14), time(15, 30))
             ):
+                if member.display_name == "Lerato" and slot_index == 4 and day >= today:
+                    # Preserve a real future deposit slot for the public demo journey.
+                    continue
                 local_start = datetime.combine(day, local_time, zone)
                 start_at = local_start.astimezone(UTC)
                 if day == today and start_at < now:

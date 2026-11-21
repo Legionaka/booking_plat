@@ -205,11 +205,11 @@ def test_payfast_handoff_has_only_route_specific_form_action_policy(
     assert 'name="merchant_id" value="test-merchant"' in handoff.text
     assert '<script src="/static/js/payfast-handoff.js" defer></script>' in handoff.text
     assert "<script>" not in handoff.text
+    form_handoff = customer.post("/payments/handoff/123", data={"csrf_token": csrf})
+    assert form_handoff.status_code == 200
 
     responses = [customer.get("/health"), customer.get("/api/config")]
-    responses.append(
-        customer.post("/api/bookings/123/pay", headers={"X-CSRF-Token": csrf})
-    )
+    responses.append(customer.post("/api/bookings/123/pay", headers={"X-CSRF-Token": csrf}))
     for response in responses:
         policy = response.headers["Content-Security-Policy"]
         form_action = next(
@@ -287,9 +287,11 @@ def test_no_deposit_booking_is_confirmed_retry_is_idempotent_and_price_is_snapsh
     assert booking["status"] == "confirmed"
     assert booking["price_cents"] == 1000
     with app.app_context():
-        rows = db.session.execute(
-            select(Notification).where(Notification.booking_id == booking["id"])
-        ).scalars().all()
+        rows = (
+            db.session.execute(select(Notification).where(Notification.booking_id == booking["id"]))
+            .scalars()
+            .all()
+        )
         assert {row.kind for row in rows} == {"confirmation", "reminder_24h", "reminder_2h"}
     assert email_service.sent == []
 
@@ -709,7 +711,12 @@ def test_permission_matrix_and_customer_booking_reads(app, scenario):
         customer, customer_csrf, scenario, slot["start_at"], staff=scenario["staff_ids"][0]
     )
     booking_id = created.json["data"]["id"]
-    assert customer.get(f"/api/me/bookings/{booking_id}").status_code == 200
+    customer_detail = customer.get(f"/api/me/bookings/{booking_id}")
+    assert customer_detail.status_code == 200
+    assert customer_detail.json["data"]["business_slug"] == scenario["slug"]
+    assert customer_detail.json["data"]["business_name"] == "Bookable"
+    assert customer_detail.json["data"]["service_name"] == "Cut"
+    assert customer_detail.json["data"]["staff_name"] == "One"
     assert other_customer.get(f"/api/me/bookings/{booking_id}").status_code == 404
     assert (
         other_customer.patch(
@@ -726,7 +733,10 @@ def test_permission_matrix_and_customer_booking_reads(app, scenario):
     )
     assert listing.status_code == 200
     assert any(item["id"] == booking_id for item in listing.json["data"])
-    assert customer.get("/api/me/bookings?filter=upcoming").status_code == 200
+    customer_list = customer.get("/api/me/bookings?filter=upcoming")
+    assert customer_list.status_code == 200
+    assert customer_list.json["data"][0]["business_timezone"] == "UTC"
+    assert customer_list.json["data"][0]["service_name"] == "Cut"
     assert (
         other_customer.get(f"/api/admin/businesses/{scenario['business_id']}/bookings").status_code
         == 404
@@ -857,9 +867,11 @@ def test_booking_email_delivery_is_deferred_to_outbox(app, scenario, email_servi
     with app.app_context():
         booking = db.session.get(Booking, response.json["data"]["id"])
         assert booking is not None
-        assert db.session.execute(
-            select(Notification).where(Notification.booking_id == booking.id)
-        ).scalars().all()
+        assert (
+            db.session.execute(select(Notification).where(Notification.booking_id == booking.id))
+            .scalars()
+            .all()
+        )
 
 
 def test_creation_requires_csrf_and_unknown_business_service_staff_scoping(app, scenario):
@@ -890,9 +902,12 @@ def test_pending_booking_has_no_outbox_until_confirmed(app, scenario, email_serv
     )
     booking_id = response.json["data"]["id"]
     with app.app_context():
-        assert db.session.execute(
-            select(Notification).where(Notification.booking_id == booking_id)
-        ).scalars().all() == []
+        assert (
+            db.session.execute(select(Notification).where(Notification.booking_id == booking_id))
+            .scalars()
+            .all()
+            == []
+        )
     confirmed = owner.patch(
         f"/api/bookings/{booking_id}",
         json={"action": "confirm"},
@@ -900,9 +915,11 @@ def test_pending_booking_has_no_outbox_until_confirmed(app, scenario, email_serv
     )
     assert confirmed.status_code == 200
     with app.app_context():
-        rows = db.session.execute(
-            select(Notification).where(Notification.booking_id == booking_id)
-        ).scalars().all()
+        rows = (
+            db.session.execute(select(Notification).where(Notification.booking_id == booking_id))
+            .scalars()
+            .all()
+        )
         assert {row.kind for row in rows} == {"confirmation", "reminder_24h", "reminder_2h"}
 
 
@@ -915,9 +932,11 @@ def test_past_reminders_are_omitted_and_rescheduling_moves_unsent_reminders(app,
 
         enqueue_confirmation_notifications(booking, now)
         db.session.commit()
-        rows = db.session.execute(
-            select(Notification).where(Notification.booking_id == booking_id)
-        ).scalars().all()
+        rows = (
+            db.session.execute(select(Notification).where(Notification.booking_id == booking_id))
+            .scalars()
+            .all()
+        )
         assert {row.kind for row in rows} == {"confirmation"}
 
     client, csrf = client_for(app, scenario["users"][0])
@@ -950,8 +969,10 @@ def test_past_reminders_are_omitted_and_rescheduling_moves_unsent_reminders(app,
             if row.kind.startswith("reminder")
         }
         assert after.keys() == before.keys()
-        assert all(after[kind] == moved_start - timedelta(hours=24 if kind == "reminder_24h" else 2)
-                   for kind in after)
+        assert all(
+            after[kind] == moved_start - timedelta(hours=24 if kind == "reminder_24h" else 2)
+            for kind in after
+        )
 
 
 def test_cancel_cancels_unsent_rows_and_queues_cancellation_email(app, scenario):
@@ -967,9 +988,11 @@ def test_cancel_cancels_unsent_rows_and_queues_cancellation_email(app, scenario)
     )
     assert response.status_code == 200
     with app.app_context():
-        rows = db.session.execute(
-            select(Notification).where(Notification.booking_id == booking_id)
-        ).scalars().all()
+        rows = (
+            db.session.execute(select(Notification).where(Notification.booking_id == booking_id))
+            .scalars()
+            .all()
+        )
         assert {row.kind: row.status for row in rows} == {
             "confirmation": "cancelled",
             "reminder_24h": "cancelled",
@@ -1232,9 +1255,7 @@ def _configure_payfast(app, *, validator_response="VALID"):
         PAYMENT_HOLD_MINUTES=20,
     )
     app.extensions["payfast_ip_resolver"] = lambda host: {"203.0.113.10"}
-    app.extensions["payfast_itn_validator"] = (
-        lambda pairs, endpoint, timeout: validator_response
-    )
+    app.extensions["payfast_itn_validator"] = lambda pairs, endpoint, timeout: validator_response
 
 
 def _deposit_booking(app, scenario, *, user_index=0, slot_index=0):
@@ -1298,10 +1319,13 @@ def test_payfast_form_signature_matches_documented_example_vector():
 
 
 def test_payfast_signature_encodes_ampersand_space_and_accented_item_name():
-    assert generate_form_signature(
-        {"merchant_id": "10000100", "item_name": "Fade & trim café"},
-        "space & secret",
-    ) == "5e0367381675480079eec51d22065a22"
+    assert (
+        generate_form_signature(
+            {"merchant_id": "10000100", "item_name": "Fade & trim café"},
+            "space & secret",
+        )
+        == "5e0367381675480079eec51d22065a22"
+    )
 
 
 @pytest.mark.parametrize(("cents", "expected"), [(18000, "180.00"), (5, "0.05")])
@@ -1316,9 +1340,7 @@ def test_pay_endpoint_permissions_reuse_and_hold_extension(app, scenario):
     with app.app_context():
         db.session.get(Booking, booking_id).hold_expires_at = original_hold
         db.session.commit()
-    first = client.post(
-        f"/api/bookings/{booking_id}/pay", headers={"X-CSRF-Token": csrf}
-    )
+    first = client.post(f"/api/bookings/{booking_id}/pay", headers={"X-CSRF-Token": csrf})
     assert first.status_code == 200
     fields = first.json["data"]["fields"]
     assert first.json["data"]["action_url"] == "https://sandbox.payfast.co.za/eng/process"
@@ -1328,9 +1350,7 @@ def test_pay_endpoint_permissions_reuse_and_hold_extension(app, scenario):
         {key: value for key, value in fields.items() if key != "signature"},
         "sample secret",
     )
-    second = client.post(
-        f"/api/bookings/{booking_id}/pay", headers={"X-CSRF-Token": csrf}
-    )
+    second = client.post(f"/api/bookings/{booking_id}/pay", headers={"X-CSRF-Token": csrf})
     assert second.status_code == 200
     assert second.json["data"]["fields"]["m_payment_id"] == fields["m_payment_id"]
     with app.app_context():
@@ -1339,16 +1359,17 @@ def test_pay_endpoint_permissions_reuse_and_hold_extension(app, scenario):
         long_hold = datetime.now(UTC) + timedelta(hours=2)
         db.session.get(Booking, booking_id).hold_expires_at = long_hold
         db.session.commit()
-    third = client.post(
-        f"/api/bookings/{booking_id}/pay", headers={"X-CSRF-Token": csrf}
-    )
+    third = client.post(f"/api/bookings/{booking_id}/pay", headers={"X-CSRF-Token": csrf})
     assert third.status_code == 200
     with app.app_context():
         assert db.session.get(Booking, booking_id).hold_expires_at == long_hold
     other, other_csrf = client_for(app, scenario["users"][1])
-    assert other.post(
-        f"/api/bookings/{booking_id}/pay", headers={"X-CSRF-Token": other_csrf}
-    ).status_code == 404
+    assert (
+        other.post(
+            f"/api/bookings/{booking_id}/pay", headers={"X-CSRF-Token": other_csrf}
+        ).status_code
+        == 404
+    )
     assert app.test_client().post(f"/api/bookings/{booking_id}/pay").status_code == 401
 
 
@@ -1367,9 +1388,7 @@ def test_pay_endpoint_rejects_ineligible_booking(app, scenario, invalid):
         else:
             booking.hold_expires_at = datetime.now(UTC) - timedelta(seconds=1)
         db.session.commit()
-    response = client.post(
-        f"/api/bookings/{booking_id}/pay", headers={"X-CSRF-Token": csrf}
-    )
+    response = client.post(f"/api/bookings/{booking_id}/pay", headers={"X-CSRF-Token": csrf})
     assert response.status_code == 409
 
 
@@ -1384,14 +1403,22 @@ def test_payfast_itn_happy_path_confirms_and_writes_outbox(app, scenario):
     assert response.status_code == 200
     with app.app_context():
         assert db.session.get(Booking, booking_id).status == "confirmed"
-        assert db.session.execute(
-            select(Payment.status).where(Payment.provider_ref == fields["m_payment_id"])
-        ).scalar_one() == "paid"
-        assert len(
+        assert (
             db.session.execute(
-                select(Notification).where(Notification.booking_id == booking_id)
-            ).scalars().all()
-        ) == 3
+                select(Payment.status).where(Payment.provider_ref == fields["m_payment_id"])
+            ).scalar_one()
+            == "paid"
+        )
+        assert (
+            len(
+                db.session.execute(
+                    select(Notification).where(Notification.booking_id == booking_id)
+                )
+                .scalars()
+                .all()
+            )
+            == 3
+        )
 
 
 @pytest.mark.parametrize(
@@ -1442,47 +1469,57 @@ def test_itn_network_failure_returns_retryable_error_without_mutation(app, scena
     _configure_payfast(app)
     _, _, booking_id = _deposit_booking(app, scenario)
     with app.app_context():
-        ref = payment_service.start_payment(
-            db.session.get(User, scenario["users"][0]), booking_id
-        )["fields"]["m_payment_id"]
+        ref = payment_service.start_payment(db.session.get(User, scenario["users"][0]), booking_id)[
+            "fields"
+        ]["m_payment_id"]
+
     def fail_validation(*args):
         raise OSError("offline")
+
     app.extensions["payfast_itn_validator"] = fail_validation
     response = _itn(app.test_client(), ref)
     assert response.status_code == 503
     with app.app_context():
         assert db.session.get(Booking, booking_id).status == "pending"
-        assert db.session.execute(
-            select(Payment.status).where(Payment.provider_ref == ref)
-        ).scalar_one() == "pending"
+        assert (
+            db.session.execute(
+                select(Payment.status).where(Payment.provider_ref == ref)
+            ).scalar_one()
+            == "pending"
+        )
 
 
 def test_itn_repeated_and_concurrent_complete_are_idempotent(app, scenario):
     _configure_payfast(app)
     _, _, booking_id = _deposit_booking(app, scenario)
     with app.app_context():
-        ref = payment_service.start_payment(
-            db.session.get(User, scenario["users"][0]), booking_id
-        )["fields"]["m_payment_id"]
+        ref = payment_service.start_payment(db.session.get(User, scenario["users"][0]), booking_id)[
+            "fields"
+        ]["m_payment_id"]
     with ThreadPoolExecutor(max_workers=2) as pool:
         responses = list(pool.map(lambda _: _itn(app.test_client(), ref).status_code, range(2)))
     assert responses == [200, 200]
     with app.app_context():
         assert db.session.get(Booking, booking_id).status == "confirmed"
-        assert len(
-            db.session.execute(
-                select(Notification).where(Notification.booking_id == booking_id)
-            ).scalars().all()
-        ) == 3
+        assert (
+            len(
+                db.session.execute(
+                    select(Notification).where(Notification.booking_id == booking_id)
+                )
+                .scalars()
+                .all()
+            )
+            == 3
+        )
 
 
 def test_replayed_complete_with_different_provider_id_is_ignored(app, scenario):
     _configure_payfast(app)
     _, _, booking_id = _deposit_booking(app, scenario)
     with app.app_context():
-        ref = payment_service.start_payment(
-            db.session.get(User, scenario["users"][0]), booking_id
-        )["fields"]["m_payment_id"]
+        ref = payment_service.start_payment(db.session.get(User, scenario["users"][0]), booking_id)[
+            "fields"
+        ]["m_payment_id"]
     client = app.test_client()
     assert _itn(client, ref, pf_payment_id="pf-original").status_code == 200
     second = client.post(
@@ -1520,9 +1557,9 @@ def test_failed_payment_then_complete_and_cancelled_booking_late_payment(
     _configure_payfast(app)
     client, _, booking_id = _deposit_booking(app, scenario)
     with app.app_context():
-        ref = payment_service.start_payment(
-            db.session.get(User, scenario["users"][0]), booking_id
-        )["fields"]["m_payment_id"]
+        ref = payment_service.start_payment(db.session.get(User, scenario["users"][0]), booking_id)[
+            "fields"
+        ]["m_payment_id"]
     assert _itn(client, ref, "FAILED").status_code == 200
     assert _itn(client, ref, "COMPLETE").status_code == 200
     with app.app_context():
@@ -1538,15 +1575,21 @@ def test_failed_payment_then_complete_and_cancelled_booking_late_payment(
     assert _itn(client, cancelled_ref, "COMPLETE").status_code == 200
     with app.app_context():
         assert db.session.get(Booking, cancelled_id).status == "cancelled"
-        assert db.session.execute(
-            select(Payment.status).where(Payment.provider_ref == cancelled_ref)
-        ).scalar_one() == "paid"
-        assert db.session.execute(
-            select(AuditLog.id).where(
-                AuditLog.entity == "payment",
-                AuditLog.action == "payment_received_for_cancelled_booking",
-            )
-        ).scalar_one_or_none() is not None
+        assert (
+            db.session.execute(
+                select(Payment.status).where(Payment.provider_ref == cancelled_ref)
+            ).scalar_one()
+            == "paid"
+        )
+        assert (
+            db.session.execute(
+                select(AuditLog.id).where(
+                    AuditLog.entity == "payment",
+                    AuditLog.action == "payment_received_for_cancelled_booking",
+                )
+            ).scalar_one_or_none()
+            is not None
+        )
         owner_notice = db.session.execute(
             select(Notification).where(
                 Notification.booking_id == cancelled_id,
@@ -1558,27 +1601,28 @@ def test_failed_payment_then_complete_and_cancelled_booking_late_payment(
 
         enqueue_late_payment_owner_notification(db.session.get(Booking, cancelled_id))
         db.session.commit()
-        assert db.session.execute(
-            select(db.func.count(Notification.id)).where(
-                Notification.booking_id == cancelled_id,
-                Notification.kind == "payment_for_cancelled_booking",
-            )
-        ).scalar_one() == 1
+        assert (
+            db.session.execute(
+                select(db.func.count(Notification.id)).where(
+                    Notification.booking_id == cancelled_id,
+                    Notification.kind == "payment_for_cancelled_booking",
+                )
+            ).scalar_one()
+            == 1
+        )
     with app.app_context():
         assert notification_jobs.send_notification(owner_notice_id) == "sent"
     assert email_service.notifications[-1][0] == scenario["users"][2]
     assert "refund is needed" in email_service.notifications[-1][2].lower()
 
 
-def test_payfast_secrets_and_full_itn_are_absent_from_logs_and_audit_diffs(
-    app, scenario, caplog
-):
+def test_payfast_secrets_and_full_itn_are_absent_from_logs_and_audit_diffs(app, scenario, caplog):
     _configure_payfast(app)
     _, _, booking_id = _deposit_booking(app, scenario)
     with app.app_context():
-        ref = payment_service.start_payment(
-            db.session.get(User, scenario["users"][0]), booking_id
-        )["fields"]["m_payment_id"]
+        ref = payment_service.start_payment(db.session.get(User, scenario["users"][0]), booking_id)[
+            "fields"
+        ]["m_payment_id"]
     response = _itn(app.test_client(), ref)
     assert response.status_code == 200
     assert "sample secret" not in caplog.text
@@ -1620,9 +1664,7 @@ def test_payment_reference_for_one_booking_never_confirms_another(app, scenario)
         ref_a = payment_service.start_payment(
             db.session.get(User, scenario["users"][0]), booking_a
         )["fields"]["m_payment_id"]
-        payment_service.start_payment(
-            db.session.get(User, scenario["users"][1]), booking_b
-        )
+        payment_service.start_payment(db.session.get(User, scenario["users"][1]), booking_b)
     assert _itn(app.test_client(), ref_a).status_code == 200
     with app.app_context():
         assert db.session.get(Booking, booking_a).status == "confirmed"
@@ -1636,8 +1678,8 @@ def test_itn_confirms_still_pending_booking_even_if_hold_time_passed(app, scenar
         reference = payment_service.start_payment(
             db.session.get(User, scenario["users"][0]), booking_id
         )["fields"]["m_payment_id"]
-        db.session.get(Booking, booking_id).hold_expires_at = (
-            datetime.now(UTC) - timedelta(seconds=1)
+        db.session.get(Booking, booking_id).hold_expires_at = datetime.now(UTC) - timedelta(
+            seconds=1
         )
         db.session.commit()
     assert _itn(app.test_client(), reference).status_code == 200
@@ -1669,16 +1711,15 @@ def test_owner_payment_listing_and_customer_booking_payment_status(app, scenario
     _configure_payfast(app)
     customer, _, booking_id = _deposit_booking(app, scenario)
     with app.app_context():
-        payment_service.start_payment(
-            db.session.get(User, scenario["users"][0]), booking_id
-        )
+        payment_service.start_payment(db.session.get(User, scenario["users"][0]), booking_id)
     booking_response = customer.get(f"/api/me/bookings/{booking_id}")
     assert booking_response.json["data"]["payment_status"] == "pending"
     owner, _ = client_for(app, scenario["users"][2])
     other, _ = client_for(app, scenario["users"][1])
-    assert owner.get(
-        f"/api/admin/businesses/{scenario['business_id']}/payments?status=pending"
-    ).status_code == 200
-    assert other.get(
-        f"/api/admin/businesses/{scenario['business_id']}/payments"
-    ).status_code == 404
+    assert (
+        owner.get(
+            f"/api/admin/businesses/{scenario['business_id']}/payments?status=pending"
+        ).status_code
+        == 200
+    )
+    assert other.get(f"/api/admin/businesses/{scenario['business_id']}/payments").status_code == 404

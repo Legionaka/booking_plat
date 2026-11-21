@@ -76,14 +76,42 @@ def test_flat_error_pages_are_rendered(app, monkeypatch, assert_rendered_page_co
     assert "You’re offline right now." in offline.text
 
 
+def test_customer_portal_routes_render_responsive_flow_shell(
+    app, monkeypatch, assert_rendered_page_contract
+):
+    monkeypatch.setattr(app.extensions["redis"], "delete", lambda *_args: 0)
+    client = app.test_client()
+    paths = (
+        ("/b/fade-lab", "landing"),
+        ("/b/fade-lab/book", "services"),
+        ("/b/fade-lab/book/time", "time"),
+        ("/b/fade-lab/book/review", "review"),
+        ("/b/fade-lab/book/confirmed/42", "confirmed"),
+        ("/account/bookings", "bookings"),
+        ("/account/bookings/42", "detail"),
+        ("/account/bookings/42/reschedule", "reschedule"),
+        ("/account/bookings/42/rescheduled", "rescheduled"),
+        ("/account/bookings/42/cancel", "cancel"),
+        ("/account/bookings/42/cancelled", "cancelled"),
+        ("/payments/return?booking_id=42", "payment_return"),
+        ("/payments/cancel?booking_id=42", "payment_cancelled"),
+    )
+    for path, view in paths:
+        response = client.get(path)
+        assert response.status_code == 200, path
+        assert f'data-view="{view}"' in response.text
+        assert_rendered_page_contract(response.text, path)
+        assert "data-demo-banner" in response.text
+        assert "data-page-state" in response.text
+    assert client.get("/payments/return?booking_id=bad").status_code == 200
+
+
 def test_payfast_csp_exception_is_exclusive_to_the_handoff_endpoint(app):
     endpoints = {rule.endpoint for rule in app.url_map.iter_rules()}
     assert "payments.payfast_handoff" in endpoints
     handoff_policy = content_security_policy_for("payments.payfast_handoff")
     handoff_form_action = handoff_policy.split("form-action ")[1].split(";")[0]
-    assert handoff_form_action == (
-        "'self' https://sandbox.payfast.co.za https://www.payfast.co.za"
-    )
+    assert handoff_form_action == ("'self' https://sandbox.payfast.co.za https://www.payfast.co.za")
     for endpoint in endpoints - {"payments.payfast_handoff"}:
         assert content_security_policy_for(endpoint) == BASE_CONTENT_SECURITY_POLICY
     assert content_security_policy_for(None) == BASE_CONTENT_SECURITY_POLICY

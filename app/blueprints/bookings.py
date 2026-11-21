@@ -8,7 +8,7 @@ from pydantic import ValidationError
 from sqlalchemy import select
 
 from app.extensions import db, limiter
-from app.models import Booking, Business, Membership, Payment, Staff
+from app.models import Booking, Business, Membership, Payment, Service, Staff
 from app.schemas.booking import BookingAction, BookingCreate
 from app.security import login_required
 from app.services import bookings as service
@@ -188,7 +188,44 @@ def _customer_list(user_id: int):
         .scalars()
         .all()
     )
-    return _data([service.serialize_booking(row) for row in rows])
+    business_ids = {row.business_id for row in rows}
+    businesses = {
+        row.id: row
+        for row in db.session.execute(
+            select(Business).where(Business.id.in_(business_ids))
+        ).scalars()
+    }
+    services = {
+        (row.business_id, row.id): row
+        for row in db.session.execute(
+            select(Service).where(Service.business_id.in_(business_ids))
+        ).scalars()
+    }
+    staff_members = {
+        (row.business_id, row.id): row
+        for row in db.session.execute(
+            select(Staff).where(Staff.business_id.in_(business_ids))
+        ).scalars()
+    }
+    payloads = []
+    for row in rows:
+        business = businesses[row.business_id]
+        service_row = services[(row.business_id, row.service_id)]
+        staff = staff_members[(row.business_id, row.staff_id)]
+        payload = service.serialize_booking(row)
+        payload.update(
+            {
+                "business_slug": business.slug,
+                "business_name": business.name,
+                "business_timezone": business.timezone,
+                "cancel_cutoff_hours": business.cancel_cutoff_hours,
+                "service_name": service_row.name,
+                "service_duration_min": service_row.duration_min,
+                "staff_name": staff.display_name,
+            }
+        )
+        payloads.append(payload)
+    return _data(payloads)
 
 
 @booking_bp.get("/api/me/bookings")
@@ -211,6 +248,29 @@ def my_booking(booking_id):
     if booking is None:
         raise service.BookingError("not_found", "Booking not found.", 404)
     payload = service.serialize_booking(booking)
+    business = db.session.execute(
+        select(Business).where(Business.id == booking.business_id)
+    ).scalar_one()
+    staff = db.session.execute(
+        select(Staff).where(Staff.id == booking.staff_id, Staff.business_id == booking.business_id)
+    ).scalar_one()
+    service_row = db.session.execute(
+        select(Service).where(
+            Service.id == booking.service_id,
+            Service.business_id == booking.business_id,
+        )
+    ).scalar_one()
+    payload.update(
+        {
+            "business_slug": business.slug,
+            "business_name": business.name,
+            "business_timezone": business.timezone,
+            "cancel_cutoff_hours": business.cancel_cutoff_hours,
+            "staff_name": staff.display_name,
+            "service_name": service_row.name,
+            "service_duration_min": service_row.duration_min,
+        }
+    )
     payload["payment_status"] = db.session.execute(
         select(Payment.status)
         .where(Payment.booking_id == booking.id, Payment.provider == "payfast")

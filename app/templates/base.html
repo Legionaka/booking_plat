@@ -1,4 +1,5 @@
 {% from "components/toast.html" import toast %}
+{% from "components/session_expired.html" import session_expired %}
 <!doctype html>
 <html lang="en">
   <head>
@@ -14,13 +15,16 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/layout.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/components/auth.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/components/system.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components/customer.css') }}">
     <script src="{{ url_for('static', filename='js/main.js') }}" defer></script>
     <script src="{{ url_for('static', filename='js/components/toast.js') }}" defer></script>
     <script src="{{ url_for('static', filename='js/components/auth-controls.js') }}" defer></script>
     <script src="{{ url_for('static', filename='js/components/surfaces.js') }}" defer></script>
+    <script src="{{ url_for('static', filename='js/components/session-expired.js') }}" defer></script>
   </head>
   <body>
     {{ toast() }}
+    {{ session_expired() }}
     <main class="page-shell {% block page_shell_class %}{% endblock %}">
       {% block content %}{% endblock %}
     </main>

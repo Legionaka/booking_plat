@@ -14,7 +14,7 @@ The file has these confirmed pages:
 | Area | Figma page/frame | Status |
 | --- | --- | --- |
 | Design system | `Design system` page; `Fade Lab • Design system` frame, node `2:121` | Verified; color tokens, ambient glass, typography, interactive components |
-| Customer portal | `Customer • Book in a minute` and `Customer • Desktop and tablet` | Verified; outside F1 |
+| Customer portal | `Customer • Book in a minute` and `Customer • Desktop and tablet` | Verified; implemented in Phase 3 at mobile, tablet, and desktop widths; see [screens.md](screens.md) |
 | Owner and staff portal | `Owner • Live control room` and `Responsive • Owner and system states` | Verified; outside F1 |
 | Platform admin | `Platform admin • Operations` | Verified; admin sign-in frame has no matching backend role/route |
 | Authentication and onboarding | `F • Authentication and onboarding`, node `20:837` | Verified; full 181-frame index in [auth-frame-inventory.md](auth-frame-inventory.md) |
@@ -107,6 +107,10 @@ The Design system page's component and data-state frames are represented on `/de
 | Avatar, stepper, command palette and nav shells | explicit Jinja macros | Initials fallback, current/completed steps, search shell, active navigation |
 
 Error pages `/404`, `/500`, and `/offline` use the flat Obsidian and glass patterns. Missing responsive, data, and interaction states extend the nearest Figma component pattern; the component sheet is the reference for those states.
+
+## Customer portal frame disposition
+
+The customer frames are implemented through shared responsive templates. Their 390, 820, and 1440 px variants map to the same routes and are handled with CSS breakpoints. The only deferred customer frames are the full-day waitlist, waitlist-joined, and slot-opened states at all three widths. They need the waitlist table, endpoints, outbox flow, and acceptance rules assigned to Phase 6; see [screens.md](screens.md).
 
 The availability engine and booking endpoints should exist before the customer booking and owner dashboard screens are connected to real data. Until then, use fixture JSON matching `docs/api.md`.
 

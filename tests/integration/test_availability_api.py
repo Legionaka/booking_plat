@@ -1,6 +1,7 @@
 """PostgreSQL integration tests for batched public availability reads."""
 
 from datetime import date, datetime, time, timedelta
+from zoneinfo import ZoneInfo
 
 import pytest
 from app.extensions import db
@@ -13,7 +14,38 @@ from app.models import (
     WorkingHours,
     staff_services,
 )
-from sqlalchemy import event, update
+from app.services.demo_seed import seed_demo
+from sqlalchemy import event, select, update
+
+
+def test_demo_seed_preserves_a_future_deposit_slot(app, client):
+    with app.app_context():
+        seed_demo(reset=True)
+        business = db.session.execute(
+            select(Business).where(Business.slug == "fade-lab")
+        ).scalar_one()
+        service = db.session.execute(
+            select(Service).where(
+                Service.business_id == business.id,
+                Service.name == "Fade and beard",
+            )
+        ).scalar_one()
+        member = db.session.execute(
+            select(Staff).where(
+                Staff.business_id == business.id,
+                Staff.display_name == "Lerato",
+            )
+        ).scalar_one()
+        day = datetime.now(ZoneInfo("Africa/Johannesburg")).date() + timedelta(days=7)
+        while day.weekday() >= 5:
+            day += timedelta(days=1)
+
+    response = client.get(
+        f"/api/b/fade-lab/slots?service={service.id}&staff={member.id}&date={day.isoformat()}"
+    )
+    assert response.status_code == 200
+    assert response.json["data"]["slots"]
+    assert response.json["data"]["slots"][0]["local_start"].endswith("15:30")
 
 
 @pytest.fixture
@@ -120,9 +152,7 @@ def test_inactive_and_unassigned_resources_and_business_id_mixing(client, catalo
         foreign_service_id = foreign_service.id
         foreign_staff_id = foreign_staff.id
         db.session.execute(
-            update(Service)
-            .where(Service.id == catalog["service_id"])
-            .values(active=False)
+            update(Service).where(Service.id == catalog["service_id"]).values(active=False)
         )
         db.session.commit()
     assert (
@@ -133,9 +163,7 @@ def test_inactive_and_unassigned_resources_and_business_id_mixing(client, catalo
     )
     with app.app_context():
         db.session.execute(
-            update(Service)
-            .where(Service.id == catalog["service_id"])
-            .values(active=True)
+            update(Service).where(Service.id == catalog["service_id"]).values(active=True)
         )
         db.session.execute(
             update(Staff).where(Staff.id == catalog["staff_id"]).values(active=False)

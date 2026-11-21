@@ -121,6 +121,8 @@ flask --app app:create_app seed-demo --reset
 
 The command refuses `APP_ENV=production`. Demo credentials are not suitable for production or shared staging; set `DEMO_OWNER_EMAIL`, `DEMO_OWNER_PASSWORD`, and `DEMO_OWNER_NAME` before use.
 
+The deterministic demo seed leaves one future Fade and beard deposit slot open each weekday so the customer booking flow and PayFast sandbox handoff can be exercised end to end.
+
 ## Secret rotation
 
 Rotate `SECRET_KEY` during a planned maintenance window; this invalidates signed verification/reset tokens. Rotate Redis/PostgreSQL credentials at the provider, update the host's secret store and dependent service references together, then redeploy web, worker, and scheduler. Rotate SMTP and PayFast credentials in their provider dashboards before updating `SMTP_PASSWORD` or the `PAYFAST_*` values. Do not print secrets in shell history, logs, or tickets. Recheck `/ready` and send a test email/payment after rotation.

@@ -14,7 +14,17 @@ PAGE_ROUTES = (
     "/auth/forgot/sent",
     "/auth/reset?token=flat-style-check",
     "/account",
+    "/account/bookings",
+    "/account/bookings/1",
     "/app",
+    "/b/fade-lab",
+    "/b/fade-lab/book",
+    "/b/fade-lab/book/time",
+    "/b/fade-lab/book/review",
+    "/account/bookings/1/reschedule",
+    "/account/bookings/1/cancel",
+    "/payments/return?booking_id=1",
+    "/payments/cancel?booking_id=1",
     "/dev/components",
 )
 
