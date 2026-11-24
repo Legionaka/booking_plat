@@ -15,8 +15,8 @@ def test_auth_pages_render_with_csp_and_no_inline_assets(client):
         ("/auth/forgot", b'data-page="forgot"'),
         ("/auth/forgot/sent", b'data-page="forgot-sent"'),
         ("/auth/reset", b'data-page="reset"'),
-        ("/app", b'TEMPORARY PLACEHOLDER'),
-        ("/account", b'TEMPORARY PLACEHOLDER'),
+        ("/app", b'data-section="dashboard"'),
+        ("/account", b'data-page="placeholder"'),
     ]
     for path, marker in pages:
         response = client.get(path)

@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import json
 import os
 import re
 import time
+from pathlib import Path
 
 from playwright.sync_api import Browser, Page, expect
 
@@ -12,17 +14,40 @@ BASE_URL = os.getenv("E2E_BASE_URL", "http://127.0.0.1:5001")
 
 
 def sign_in_owner(page: Page) -> int:
-    page.goto(f"{BASE_URL}/auth/login")
-    page.locator("#login-email").fill(os.getenv("DEMO_OWNER_EMAIL", "owner@fade-lab.demo"))
-    page.locator("#login-password").fill(
-        os.getenv("DEMO_OWNER_PASSWORD", "DemoOnly-ChangeMe-2026!")
-    )
-    page.get_by_role("button", name="Sign in").click()
-    expect(page).to_have_url(re.compile(r"/account$"))
+    email = os.getenv("DEMO_OWNER_EMAIL", "owner@fade-lab.demo")
+    password = os.getenv("DEMO_OWNER_PASSWORD", "DemoOnly-ChangeMe-2026!")
+    page.goto(f"{BASE_URL}/auth/login", wait_until="domcontentloaded")
+    page.locator("#login-email").fill(email)
+    page.locator("#login-password").fill(password)
+    with page.expect_response("**/api/auth/login") as response_info:
+        page.get_by_role("button", name="Sign in").click()
+    response = response_info.value
+    if response.status != 200:
+        payload = json.loads(response.request.post_data or "{}")
+        raise AssertionError(
+            f"Login API returned {response.status}; "
+            f"submitted email matches={payload.get('email') == email}, "
+            f"password matches={payload.get('password') == password}; "
+            f"error={response.json().get('error', {}).get('code')}"
+        )
+    expect(page).to_have_url(re.compile(r"/app/\d+/dashboard$"))
     memberships = page.evaluate(
         """async () => (await (await fetch('/api/auth/me')).json()).data.user.memberships"""
     )
     return next(item["business_id"] for item in memberships if item["role"] == "owner")
+
+
+def test_owner_dashboard_and_analytics_screenshots(browser: Browser):
+    page = browser.new_page(viewport={"width": 1440, "height": 1100})
+    business_id = sign_in_owner(page)
+    screenshot_dir = Path(__file__).resolve().parents[2] / "docs" / "assets" / "screenshots"
+    screenshot_dir.mkdir(parents=True, exist_ok=True)
+    page.goto(f"{BASE_URL}/app/{business_id}/dashboard")
+    expect(page.get_by_role("heading", name="Overview")).to_be_visible()
+    page.screenshot(path=screenshot_dir / "owner-dashboard.png", full_page=True)
+    page.goto(f"{BASE_URL}/app/{business_id}/analytics")
+    expect(page.get_by_role("heading", name="Analytics")).to_be_visible()
+    page.screenshot(path=screenshot_dir / "analytics.png", full_page=True)
 
 
 def test_owner_onboarding_creates_business_service_staff_and_hours(browser: Browser):
@@ -42,7 +67,7 @@ def test_owner_onboarding_creates_business_service_staff_and_hours(browser: Brow
         nonlocal created_business_id
         response = route.fetch()
         created_business_id = response.json()["data"]["id"]
-        route.fulfill(response)
+        route.fulfill(response=response)
 
     page.route("**/api/auth/me", me)
     page.route("**/api/admin/businesses", create_business)
@@ -174,7 +199,9 @@ def test_staff_workspace_hides_owner_sections(browser: Browser):
     expect(page.get_by_role("link", name="Services")).to_have_count(0)
     expect(page.locator("[data-create-booking]")).to_be_hidden()
     page.goto(f"{BASE_URL}/app/{business_id}/services")
-    expect(page.get_by_text("only available to business owners")).to_be_visible()
+    expect(
+        page.get_by_text("This section is only available to business owners.", exact=True)
+    ).to_be_visible()
 
 
 def test_chart_modules_render_accessible_flat_svg(browser: Browser):

@@ -23,13 +23,18 @@ AUTH_PAGES = (
 )
 
 
-def verification_link_from_captured_output(log_path: Path) -> str:
+def verification_link_from_captured_output(log_path: Path, email: str) -> str:
     deadline = time.monotonic() + 10
     while time.monotonic() < deadline:
         output = log_path.read_text(encoding="utf-8", errors="replace")
-        match = re.search(r"Verify your email address: (http://[^\s]+)", output)
-        if match:
-            return match.group(1)
+        messages = re.findall(
+            r"To: ([^\s]+)\nSubject: Verify your email\nBody:\n"
+            r"Verify your email address: (http://[^\s]+)",
+            output,
+        )
+        for recipient, url in reversed(messages):
+            if recipient == email:
+                return url
         time.sleep(0.1)
     raise AssertionError("No verification URL appeared in the captured console email output.")
 
@@ -71,7 +76,7 @@ def test_register_sign_in_link_and_login_submit_diagnostics(browser: Browser):
     page.locator("#register-password").fill(password)
     page.get_by_role("button", name="Create account").click()
     expect(page).to_have_url(re.compile(r"/auth/verify$"))
-    page.goto(verification_link_from_captured_output(Path(os.environ["E2E_EMAIL_LOG"])))
+    page.goto(verification_link_from_captured_output(Path(os.environ["E2E_EMAIL_LOG"]), email))
     expect(page.get_by_role("heading", name="Email verified")).to_be_visible()
     assert "token=" not in page.url
 
@@ -141,7 +146,7 @@ def test_register_verify_login_sign_out_and_security(browser: Browser):
     expect(page).to_have_url(re.compile(r"/auth/verify$"))
 
     log_path = Path(os.environ["E2E_EMAIL_LOG"])
-    verification_url = verification_link_from_captured_output(log_path)
+    verification_url = verification_link_from_captured_output(log_path, email)
     page.goto(verification_url)
     expect(page.get_by_role("heading", name="Email verified")).to_be_visible()
     assert urlsplit(page.url).path == "/auth/verify"
@@ -160,6 +165,7 @@ def test_register_verify_login_sign_out_and_security(browser: Browser):
     expect(page).to_have_url(re.compile(r"/account$"))
     assert urlsplit(page.url).netloc == urlsplit(BASE_URL).netloc
     page.get_by_role("button", name="Sign out").click()
+    expect(page).to_have_url(re.compile(r"/auth/login$"))
 
     # Encoded backslash variant of https\://example.com must stay on this origin.
     page.goto(f"{BASE_URL}/auth/login?next=https%5C%3A%2F%2Fexample.com")

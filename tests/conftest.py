@@ -3,13 +3,14 @@
 import os
 import re
 from html.parser import HTMLParser
+from pathlib import Path
 from uuid import uuid4
 
 import pytest
 from alembic import command
 from alembic.config import Config
 from app import create_app
-from app.extensions import db
+from app.extensions import db, limiter
 from redis import Redis
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine import make_url
@@ -119,9 +120,22 @@ def apply_test_migrations(test_database_url: str) -> None:
 
 
 @pytest.fixture(autouse=True)
-def clean_database(app, apply_test_migrations) -> None:
+def clean_database(app, apply_test_migrations, request) -> None:
+    if Path(request.node.path).is_relative_to(Path(__file__).parent / "e2e"):
+        # Browser tests share the local Flask server's test database. Restore the
+        # deterministic demo business in place so IDs remain stable and the web
+        # server never races a test-side TRUNCATE against active requests.
+        from app.services.demo_seed import seed_demo
+
+        Redis.from_url(app.config["RATELIMIT_STORAGE_URI"]).flushdb()
+        limiter.reset()
+        with app.app_context():
+            seed_demo(reset=True)
+        return
     # TEST_REDIS_URL defaults to Redis DB 15, reserved for isolated test state.
     Redis.from_url(app.config["RATELIMIT_STORAGE_URI"]).flushdb()
+    # Flask-Limiter falls back to in-process storage if the Redis client cannot connect.
+    limiter.reset()
     with app.app_context():
         db.session.execute(
             text(

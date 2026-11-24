@@ -411,7 +411,11 @@
   async function init() {
     setState("Loading…");
     try {
-      const config = await get("/api/config");
+      // /api/config intentionally uses a top-level shape rather than the
+      // authenticated API's {data: ...} envelope.
+      const configResponse = await fetch("/api/config", { credentials: "same-origin" });
+      if (!configResponse.ok) throw new Error("Demo configuration is temporarily unavailable.");
+      const config = await configResponse.json();
       const banner = root.querySelector("[data-demo-banner]");
       if (banner) banner.hidden = !config.demo_mode;
       if (["landing", "services", "time", "review"].includes(view)) await loadBusiness();

@@ -56,9 +56,13 @@ DEMO_CUSTOMERS = [
 ]
 
 
-def _user(email: str, full_name: str, password: str) -> User:
+def _user(email: str, full_name: str, password: str, *, reset_credentials: bool = False) -> User:
     existing = db.session.execute(select(User).where(User.email == email)).scalar_one_or_none()
     if existing:
+        if reset_credentials:
+            existing.full_name = full_name
+            existing.password_hash = PasswordHasher().hash(password)
+            existing.verified_at = datetime.now(UTC)
         return existing
     row = User(
         email=email,
@@ -89,7 +93,8 @@ def reset_demo_business() -> bool:
     db.session.execute(delete(Membership).where(Membership.business_id == business.id))
     db.session.execute(delete(Service).where(Service.business_id == business.id))
     db.session.execute(delete(Staff).where(Staff.business_id == business.id))
-    db.session.delete(business)
+    # Keep the business row and its ID stable so browser links and fixtures stay
+    # deterministic across resets. The seed below recreates its related records.
     db.session.flush()
     return True
 
@@ -103,7 +108,7 @@ def seed_demo(*, reset: bool = False) -> dict[str, int]:
     owner_email = os.getenv("DEMO_OWNER_EMAIL", "owner@fade-lab.demo")
     owner_password = os.getenv("DEMO_OWNER_PASSWORD", DEMO_PASSWORD)
     owner_name = os.getenv("DEMO_OWNER_NAME", "Fade Lab Owner")
-    owner = _user(owner_email, owner_name, owner_password)
+    owner = _user(owner_email, owner_name, owner_password, reset_credentials=reset)
 
     business = db.session.execute(
         select(Business).where(Business.slug == DEMO_SLUG)
@@ -192,6 +197,7 @@ def seed_demo(*, reset: bool = False) -> dict[str, int]:
             f"customer{index:02d}@fade-lab.demo",
             name,
             f"Demo-Customer-{index:02d}-ChangeMe!",
+            reset_credentials=reset,
         )
         for index, name in enumerate(DEMO_CUSTOMERS, 1)
     ]
@@ -208,6 +214,12 @@ def seed_demo(*, reset: bool = False) -> dict[str, int]:
     created = 0
     payment_count = 0
     today = datetime.now(zone).date()
+    pending_demo_day = today + timedelta(days=1)
+    while pending_demo_day.weekday() > 4:
+        pending_demo_day += timedelta(days=1)
+    reschedule_demo_day = pending_demo_day + timedelta(days=1)
+    while reschedule_demo_day.weekday() > 4:
+        reschedule_demo_day += timedelta(days=1)
     for day_offset in range(-56, 15):
         day = today + timedelta(days=day_offset)
         if day.weekday() > 4:
@@ -233,7 +245,6 @@ def seed_demo(*, reset: bool = False) -> dict[str, int]:
                 ).scalar_one_or_none()
                 if existing is not None:
                     continue
-                customer = rng.choice(customers)
                 if day < today:
                     status = ("completed", "completed", "cancelled", "no_show", "completed")[
                         (day.toordinal() + slot_index + member.id) % 5
@@ -242,6 +253,26 @@ def seed_demo(*, reset: bool = False) -> dict[str, int]:
                     status = ("confirmed", "pending", "confirmed", "confirmed", "cancelled")[
                         (day.toordinal() + slot_index + member.id) % 5
                     ]
+                if (
+                    day == reschedule_demo_day
+                    and member.display_name == "Lerato"
+                    and slot_index == 1
+                ):
+                    # Keep one deterministic active booking for the reschedule
+                    # journey without consuming a deposit hold.
+                    status = "confirmed"
+                    customer = customers[0]
+                elif (
+                    day == pending_demo_day
+                    and member.display_name == "Sipho"
+                    and slot_index == 0
+                ):
+                    # Keep a deterministic pending deposit booking available to
+                    # customer02 for the sandbox payment-return browser journey.
+                    status = "pending"
+                    customer = customers[1]
+                else:
+                    customer = rng.choice(customers)
                 end_at = start_at + timedelta(minutes=offering.duration_min)
                 initial_status = status if status in {"pending", "confirmed"} else "confirmed"
                 booking = Booking(

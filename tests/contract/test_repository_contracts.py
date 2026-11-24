@@ -1,5 +1,6 @@
 """Repository documentation and configuration consistency contracts."""
 
+import json
 import re
 from pathlib import Path
 
@@ -61,6 +62,51 @@ def test_registered_api_routes_are_documented():
             missing.append(f"{','.join(sorted(rule.methods - {'HEAD', 'OPTIONS'}))} {rule.rule}")
 
     assert not missing, "Undocumented API routes: " + "; ".join(missing)
+
+
+def test_openapi_paths_and_methods_match_registered_api_routes():
+    spec = json.loads((ROOT / "docs/openapi.yaml").read_text(encoding="utf-8"))
+    documented = {
+        (path, method.upper())
+        for path, operations in spec["paths"].items()
+        for method in operations
+    }
+    registered = set()
+    for rule in create_app({"TESTING": True}).url_map.iter_rules():
+        if not rule.rule.startswith("/api/"):
+            continue
+        path = re.sub(
+            r"<(?:(?:int|float|path|string|uuid):)?([^>]+)>", r"{\1}", rule.rule
+        )
+        registered.update((path, method) for method in rule.methods - {"HEAD", "OPTIONS"})
+
+    assert documented == registered, (
+        f"OpenAPI drift; missing={sorted(registered - documented)}, "
+        f"stale={sorted(documented - registered)}"
+    )
+
+
+def test_render_blueprint_has_expected_services_and_runtime_commands():
+    source = (ROOT / "render.yaml").read_text(encoding="utf-8")
+    required = (
+        "name: booking-platform-web",
+        "name: booking-platform-worker",
+        "name: booking-platform-scheduler",
+        "runtime: docker",
+        "preDeployCommand: flask --app app:create_app db upgrade",
+        "healthCheckPath: /ready",
+        "name: booking-platform-production",
+        "key: APP_ENV",
+        "key: EMAIL_BACKEND",
+        "key: EMAIL_PROVIDER",
+        "key: EMAIL_API_KEY",
+        "key: PAYFAST_SANDBOX",
+    )
+    missing = [value for value in required if value not in source]
+    assert not missing, f"Render blueprint is missing required configuration: {missing}"
+    assert source.count("runtime: docker") == 3
+    assert source.count("fromService:") >= 6
+    assert "fromDatabase:" in source
 
 
 def test_environment_variables_read_in_code_are_documented():

@@ -14,6 +14,7 @@ from app.models import (
     WorkingHours,
     staff_services,
 )
+from app.services.auth import authenticate
 from app.services.demo_seed import seed_demo
 from sqlalchemy import event, select, update
 
@@ -45,7 +46,18 @@ def test_demo_seed_preserves_a_future_deposit_slot(app, client):
     )
     assert response.status_code == 200
     assert response.json["data"]["slots"]
-    assert response.json["data"]["slots"][0]["local_start"].endswith("15:30")
+    assert response.json["data"]["timezone"] == "Africa/Johannesburg"
+    assert all(slot["staff_ids"] == [member.id] for slot in response.json["data"]["slots"])
+    assert any(slot["local_start"] == "15:30" for slot in response.json["data"]["slots"])
+
+
+def test_reset_seed_restores_deterministic_demo_credentials(app, monkeypatch):
+    monkeypatch.setenv("DEMO_OWNER_EMAIL", "owner@fade-lab.demo")
+    monkeypatch.setenv("DEMO_OWNER_PASSWORD", "DemoOnly-ChangeMe-2026!")
+    with app.app_context():
+        seed_demo(reset=True)
+        owner = authenticate("owner@fade-lab.demo", "DemoOnly-ChangeMe-2026!")
+        assert owner.email == "owner@fade-lab.demo"
 
 
 @pytest.fixture
