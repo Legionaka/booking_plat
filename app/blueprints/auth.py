@@ -3,7 +3,7 @@
 import hashlib
 import secrets
 from functools import wraps
-from typing import Any
+from typing import Any, cast
 
 from flask import Blueprint, current_app, g, jsonify, request, session
 from flask_limiter.util import get_remote_address
@@ -122,11 +122,19 @@ def login():
     payload = _validated(LoginRequest)
     user = auth.authenticate(payload.email, payload.password)
     session.clear()
-    current_app.session_interface.regenerate(session)
+    cast(Any, current_app.session_interface).regenerate(session)
     session["_user_id"] = user.id
     session["_auth_version"] = user.password_hash
     session["_csrf_token"] = secrets.token_urlsafe(32)
-    return jsonify({"data": {"user": auth.user_payload(user)}})
+        
+    payload = auth.user_payload(user)
+    memberships = cast(list[dict[str, Any]], payload["memberships"])
+    is_owner = any(m["role"] == "owner" for m in memberships)
+    redirect_url = "/app" if is_owner else "/account"
+
+    return jsonify({"data": {"user": payload, "redirect": redirect_url}}), 201
+
+
 
 
 @auth_bp.post("/logout")

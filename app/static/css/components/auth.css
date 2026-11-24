@@ -51,3 +51,4 @@
 @supports (backdrop-filter:blur(var(--blur-glass))){.auth-card,.ambient-panel,.field__control,.button--secondary,.availability-preview,.alert{background-color:var(--glass-back);backdrop-filter:blur(var(--blur-glass));-webkit-backdrop-filter:blur(var(--blur-glass))}}
 @media(prefers-reduced-motion:reduce){.spinner{animation:none}.button,.strength__fill{transition:none}}
 @media(min-width:901px) and (max-height:960px){.ambient-panel{padding-top:var(--space-8)}.ambient-panel h2{font-size:clamp(var(--text-40),5vw,var(--text-56))}.ambient-panel__services{gap:var(--space-half);margin-bottom:var(--space-4);font-size:var(--text-20)}.availability-preview{min-height:260px}.availability-preview__day{height:100px}}
+.account-actions{display:grid;gap:var(--space-1);margin-bottom:var(--space-2)}

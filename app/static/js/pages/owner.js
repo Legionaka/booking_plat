@@ -261,7 +261,7 @@
       root.querySelectorAll("[data-business-name]").forEach((node) => { node.textContent = business.name; node.href = `/app/${businessId}/dashboard`; });
       root.querySelector("[data-section-label]").textContent = labels[section] || "Overview";
       root.querySelectorAll("[data-nav-section]").forEach((node) => { node.href = `/app/${businessId}/${node.dataset.navSection}`; if (node.dataset.navSection === section) node.setAttribute("aria-current", "page"); if (membership.role === "staff" && !["dashboard", "week", "bookings"].includes(node.dataset.navSection)) node.hidden = true; });
-      root.querySelector("[data-create-booking]").hidden = membership.role === "staff";
+      root.querySelector("[data-create-booking]").hidden = true;
       if (membership.role === "staff" && !["dashboard", "week", "bookings"].includes(section)) throw new Error("This section is only available to business owners.");
       const loaders = { dashboard: membership.role === "staff" ? loadStaffOverview : loadOverview, week: loadWeek, bookings: loadBookings, services: loadServices, staff: loadStaff, hours: loadHours, customers: loadCustomers, payments: loadPayments, analytics: loadAnalytics, settings: loadSettings, audit: loadAudit };
       await (loaders[section] || loadOverview)();
@@ -299,8 +299,10 @@
   root.addEventListener("submit", async (event) => {
     const form = event.target;
     if (form.matches("[data-hours-form]")) { event.preventDefault(); const staffId = form.dataset.hoursForm; const hours = days.flatMap((_, index) => { const open = form.querySelector(`[data-weekday="${index}"][data-open]`).checked; if (!open) return []; return [{ weekday: index, start_time: form.querySelector(`[data-weekday="${index}"][data-edge="start"]`).value, end_time: form.querySelector(`[data-weekday="${index}"][data-edge="end"]`).value }]; }); try { await put(url(`/staff/${staffId}/working-hours`), { hours }); notice.hidden = false; notice.textContent = "Weekly hours saved."; } catch (error) { showError(error); } }
-    if (form.matches("[data-timeoff-form]")) { event.preventDefault(); const data = new FormData(form); const staffId = form.dataset.timeoffForm; try { await post(url(`/staff/${staffId}/time-off`), { start_at: new Date(data.get("start_at")).toISOString(), end_at: new Date(data.get("end_at")).toISOString(), reason: data.get("reason") }); await loadHours(); } catch (error) { showError(error); } }
-    if (form.matches("[data-business-form]")) { event.preventDefault(); const data = new FormData(form); try { business = await patch(`/api/admin/businesses/${businessId}`, { name: data.get("name"), timezone: data.get("timezone"), cancel_cutoff_hours: Number(data.get("cancel_cutoff_hours")), slot_step_min: Number(data.get("slot_step_min")) }); notice.hidden = false; notice.textContent = "Business settings saved."; } catch (error) { showError(error); } }
+    if (form.matches("[data-timeoff-form]")) { event.preventDefault(); const data = new FormData(form); const staffId = form.dataset.timeoffForm; try { await post(url(`/staff/${staffId}/time-off`), { start_at: new Date(data.get("start_at")).toISOString(), end_at: new Date(data.get("end_at")).toISOString(), reason: data.get("reason") }); await loadHours(); } catch (error) { showError(error); }
+    }
+    if (form.matches("[data-business-form]")) { event.preventDefault(); const data = new FormData(form); try { business = await patch(`/api/admin/businesses/${businessId}`, { name: data.get("name"), timezone: data.get("timezone"), cancel_cutoff_hours: Number(data.get("cancel_cutoff_hours")), slot_step_min: Number(data.get("slot_step_min")) }); notice.hidden = false; notice.textContent = "Business settings saved."; } catch (error) { showError(error); }
+    }
   });
   root.querySelector("[data-command-input]").addEventListener("input", (event) => {
     const query = event.target.value.toLowerCase(); const results = nav.filter((item) => item.includes(query) || labels[item].toLowerCase().includes(query));
