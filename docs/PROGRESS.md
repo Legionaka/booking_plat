@@ -17,7 +17,7 @@ Live log of the finish/full-build run. Updated at the end of every phase and whe
 | 4 | Done (committed) | Owner/staff portal: dashboard, week view, booking detail drawer, services CRUD, staff, hours, time off, customers, payments, analytics, settings/QR, audit log, command palette, onboarding, SVG chart modules | Part of phase-0-to-4 verified run | Walk-in modal (ADR 0005: needs no table change but backend requires registered customer; deferred) |
 | 5 | In progress | README, docs index/planning/architecture/api/environment/operations/payments/jobs/testing/security/design, decisions ADRs, AGENTS.md, CHANGELOG, LICENSE, SECURITY.md, CONTRIBUTING.md, screenshots, OpenAPI | Baseline `python scripts/check.py --e2e` on current tree: pip install (hash-locked) OK; ruff all checks passed; frontend policy scan passed; pytest 273 passed / 1 skipped (RQ worker needs Linux fork) in 244.74s; coverage 88.77% total (>=80 required), app/services 89.85% (>=85 required); E2E 108 passed / 0 failed in 2023.10s; docker build exit 0 | None |
 | 6 | Not started | Staff invites, TOTP two-step, active sessions, business switcher, platform admin, waitlist | — | Waitlist needs new table + migration |
-| 7 | Not started | Clean-clone regression, screenshot refresh, HANDOVER.md | — | — |
+| 7 | In progress | Final route/redirect/forms/security/documentation audits; clean-clone and Docker regression pending | Targeted audits: 66 contract/integration tests passed; frontend policy passed; route matrix current | None |
 
 ## Preflight (done)
 - Docker Desktop started; `booking_plat-db-1` (postgres:17, port 5433) and `booking_plat-redis-1` (redis:7, port 6379) healthy

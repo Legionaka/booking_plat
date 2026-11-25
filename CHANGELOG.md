@@ -32,3 +32,9 @@
 ## Phase 0 — baseline and style policy
 
 - Enforce flat monochrome styling, frontend policy, and repository/documentation contracts.
+
+## Final hardening
+
+- Added generated route matrix and redirect/open-redirect regression coverage.
+- Added standard-library deployment smoke script and Redis-independent `/ready` behavior.
+- Added forms, copy, secret, contact, environment, and repository contract audits.

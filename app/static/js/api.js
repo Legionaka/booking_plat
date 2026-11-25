@@ -111,8 +111,6 @@
     const fill = meter.querySelector(".strength__fill");
     const label = meter.querySelector("[data-strength-label]");
     fill.dataset.level = String(score);
-    fill.setAttribute("aria-label", `Strength ${score} of 4`);
-    fill.style.setProperty("width", `${score * 25}%`);
     label.textContent = value.length === 0 ? "Not entered" : score < 2 ? "Weak" : score < 4 ? "Fair" : "Strong";
   }
 
@@ -148,9 +146,8 @@
 
   function responseMessage(error) {
     if (error instanceof TypeError) return "You appear to be offline. Check your connection and try again.";
-    if (error.status === 429) return "Too many requests. Please try again when the countdown ends.";
     if (error.status === 503 && error.code === "dependency_unavailable") return "Authentication is temporarily unavailable. Please try again.";
-    return error.message || "Something went wrong. Please try again.";
+    return messages[error.status] || error.message || "Something went wrong. Please try again.";
   }
 
   function startRateLimitCountdown(error, button) {
@@ -184,6 +181,16 @@
     tick();
     const timer = window.setInterval(tick, 1000);
   }
+
+  const messages = {
+      401: "Sign in to continue.",
+      403: "You do not have permission to complete this action.",
+      404: "We couldn’t find the requested resource.",
+      409: "This change conflicts with the latest booking state.",
+      422: "Check the highlighted fields and try again.",
+      429: "Too many requests. Please try again when the countdown ends.",
+      503: "The service is temporarily unavailable. Please try again.",
+    };
 
   window.BookingApi = { ...api, bindFields, bindForm, validateField, showAlert, responseMessage, startRateLimitCountdown };
 })();

@@ -20,8 +20,7 @@ from app.services.email import build_email_service
 from app.sessions import RedisSessionInterface
 
 DEPENDENCY_UNAVAILABLE_MESSAGE = (
-    "Authentication services are temporarily unavailable. "
-    "Please try again."
+    "Authentication services are temporarily unavailable. Please try again."
 )
 BASE_CONTENT_SECURITY_POLICY = (
     "default-src 'self'; base-uri 'self'; object-src 'none'; "
@@ -78,8 +77,7 @@ def create_app(test_config: dict[str, object] | None = None) -> Flask:
                 "SMTP_FROM_ADDRESS": bool(app.config.get("SMTP_FROM_ADDRESS")),
                 "SMTP_TLS_MODE": app.config.get("SMTP_TLS_MODE") in {"starttls", "ssl"},
                 "SMTP_CREDENTIALS": not (
-                    bool(app.config.get("SMTP_USERNAME"))
-                    != bool(app.config.get("SMTP_PASSWORD"))
+                    bool(app.config.get("SMTP_USERNAME")) != bool(app.config.get("SMTP_PASSWORD"))
                 ),
             }
         elif email_backend == "http_api":
@@ -93,9 +91,10 @@ def create_app(test_config: dict[str, object] | None = None) -> Flask:
                 required_email["EMAIL_MAILGUN_DOMAIN"] = bool(
                     app.config.get("EMAIL_MAILGUN_DOMAIN")
                 )
-                required_email["EMAIL_MAILGUN_REGION"] = app.config.get(
-                    "EMAIL_MAILGUN_REGION"
-                ) in {"us", "eu"}
+                required_email["EMAIL_MAILGUN_REGION"] = app.config.get("EMAIL_MAILGUN_REGION") in {
+                    "us",
+                    "eu",
+                }
         else:
             required_email = {"EMAIL_BACKEND": False}
 
@@ -150,9 +149,7 @@ def create_app(test_config: dict[str, object] | None = None) -> Flask:
     migrate.init_app(app, db, directory="migrations")
     redis_client = Redis.from_url(app.config["REDIS_URL"], decode_responses=True)
     app.extensions["redis"] = redis_client
-    app.extensions["rq_redis"] = Redis.from_url(
-        app.config["REDIS_URL"], decode_responses=False
-    )
+    app.extensions["rq_redis"] = Redis.from_url(app.config["REDIS_URL"], decode_responses=False)
     rate_redis = Redis.from_url(app.config["RATELIMIT_STORAGE_URI"], decode_responses=True)
     app.extensions["rate_redis"] = rate_redis
     app.session_interface = RedisSessionInterface(
@@ -160,9 +157,7 @@ def create_app(test_config: dict[str, object] | None = None) -> Flask:
         key_prefix=app.config.get("SERVER_SESSION_KEY_PREFIX", "booking-platform:session:"),
         ttl_seconds=app.config["SERVER_SESSION_TTL_SECONDS"],
     )
-    app.extensions["email_service"] = build_email_service(
-        app.config["EMAIL_BACKEND"], app.config
-    )
+    app.extensions["email_service"] = build_email_service(app.config["EMAIL_BACKEND"], app.config)
     install_csrf_protection(app)
 
     @app.before_request
@@ -199,9 +194,7 @@ def create_app(test_config: dict[str, object] | None = None) -> Flask:
     def security_headers(response):
         if request.path.startswith("/static/"):
             response.headers.setdefault("Cache-Control", "public, max-age=86400")
-        response.headers["Content-Security-Policy"] = content_security_policy_for(
-            request.endpoint
-        )
+        response.headers["Content-Security-Policy"] = content_security_policy_for(request.endpoint)
         response.headers.setdefault("X-Content-Type-Options", "nosniff")
         response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
         if request.path.startswith("/auth/"):
@@ -212,6 +205,30 @@ def create_app(test_config: dict[str, object] | None = None) -> Flask:
                 "Strict-Transport-Security", "max-age=31536000; includeSubDomains"
             )
         return response
+
+    @app.before_request
+    def canonical_https_host():
+        if app.config.get("APP_ENV") != "production":
+            return None
+        if request.path.startswith(("/health", "/ready", "/static/")):
+            return None
+        public = str(app.config.get("PUBLIC_BASE_URL", "")).rstrip("/")
+        if not public:
+            return None
+        from urllib.parse import urlsplit
+
+        from flask import redirect
+
+        configured = urlsplit(public)
+        host = request.host.split(":", 1)[0].lower()
+        if (
+            request.scheme != "https"
+            or host.startswith("www.")
+            or (configured.hostname and host != configured.hostname.lower())
+        ):
+            target = public + request.full_path.rstrip("?")
+            return redirect(target, code=308)
+        return None
 
     # Import models so Flask-Migrate can discover their metadata.
     from app import models  # noqa: F401
@@ -239,6 +256,7 @@ def create_app(test_config: dict[str, object] | None = None) -> Flask:
     @app.get("/api/config")
     def public_config():
         return jsonify({"demo_mode": bool(app.config.get("DEMO_MODE", False))})
+
     from app.cli import register_cli
 
     register_cli(app)

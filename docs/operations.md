@@ -88,7 +88,7 @@ The suite saves full-page auth captures at 1440, 820, and 390 px with reduced mo
 - **Redis unavailable or API returns 503:** start `docker compose up -d redis`, verify `docker compose exec redis redis-cli ping` returns `PONG`, and check `REDIS_URL`/`RATELIMIT_STORAGE_URI`. Auth endpoints fail closed with 503 when Redis cannot be reached.
 - **Seed fails on missing tables:** apply migrations first with `flask --app app:create_app db upgrade`, then run `flask --app app:create_app seed-demo`. The seed command intentionally does not create or migrate schema.
 - **Render Free email cannot deliver over SMTP:** use `EMAIL_BACKEND=http_api` and a verified HTTPS provider sender/API key. SMTP ports 25, 465, and 587 are blocked on Render Free; provider setup is documented above.
-- **`/ready` is unhealthy:** check PostgreSQL and Redis reachability from the app container, inspect JSON logs by `X-Request-ID`, then verify the expected service URLs and credentials in the host environment.
+- **`/ready` is unhealthy:** check PostgreSQL reachability from the app container, inspect JSON logs by `X-Request-ID`, then verify `DATABASE_URL`. Redis availability is checked separately for auth/session operations.
 
 ## Render deployment setup
 
@@ -155,4 +155,14 @@ This starts Gunicorn, the normal RQ worker, and the scheduler as child processes
 
 ## Health and incidents
 
-Use `/health` for liveness and `/ready` for PostgreSQL/Redis readiness. Each response includes `X-Request-ID`; use that ID to correlate application JSON logs. Keep raw PayFast ITN payload retention limited as described in `payments.md`.
+Use `/health` for liveness and `/ready` for PostgreSQL readiness. `/ready` does not depend on Redis; Redis-backed sessions and auth routes continue to fail closed independently. Each response includes `X-Request-ID`; use that ID to correlate application JSON logs. Keep raw PayFast ITN payload retention limited as described in `payments.md`.
+
+## Deployment smoke check
+
+After a deployment, run the standard-library smoke checker (no credentials or extra packages):
+
+```sh
+python scripts/smoke.py https://booking-plat.onrender.com
+```
+
+It checks health, readiness, public configuration, landing/discovery routes, demo booking routes, unknown-path JSON, protected-page redirects, trailing slashes, and required security headers. A non-zero exit means at least one check failed.

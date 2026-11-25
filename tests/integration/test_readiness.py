@@ -163,7 +163,7 @@ def test_development_allows_plaintext_smtp_transport():
     assert application.extensions["email_service"].__class__.__name__ == "SMTPEmailService"
 
 
-def test_ready_checks_postgres_and_redis_and_health_is_liveness(client, app, monkeypatch):
+def test_ready_checks_postgres_and_health_is_liveness(client, app, monkeypatch):
     assert client.get("/health").status_code == 200
     assert client.get("/ready").get_json() == {"status": "ok"}
 
@@ -180,15 +180,15 @@ def test_ready_checks_postgres_and_redis_and_health_is_liveness(client, app, mon
     assert client.get("/health").status_code == 200
 
 
-def test_ready_fails_when_redis_is_unreachable(client, app, monkeypatch):
+def test_ready_does_not_depend_on_redis(client, app, monkeypatch):
     monkeypatch.setattr(
         app.extensions["redis"],
         "ping",
         lambda: (_ for _ in ()).throw(RedisConnectionError("redis offline")),
     )
     response = client.get("/ready")
-    assert response.status_code == 503
-    assert response.json == {"status": "unhealthy"}
+    assert response.status_code == 200
+    assert response.json == {"status": "ok"}
 
 
 def test_health_public_config_and_static_skip_session_redis_when_unavailable(
@@ -226,7 +226,7 @@ def test_ready_auth_and_session_routes_fail_closed_when_redis_is_unavailable(
     monkeypatch.setattr(app.extensions["redis"], "delete", unavailable)
     monkeypatch.setattr(app.extensions["rate_redis"], "ping", unavailable)
 
-    assert client.get("/ready").status_code == 503
+    assert client.get("/ready").status_code == 200
     auth = client.get("/api/auth/me")
     assert auth.status_code == 503
     assert auth.json["error"]["code"] == "dependency_unavailable"
@@ -304,8 +304,8 @@ def test_request_id_is_returned_and_json_logs_exclude_secrets(client, app):
 
     def log_probe():
         current_app.extensions["email_service"].send_verification(
-                SimpleNamespace(id=42, email="private-reader@example.test"),
-                "verification-token-never-log",
+            SimpleNamespace(id=42, email="private-reader@example.test"),
+            "verification-token-never-log",
         )
         return jsonify({"ok": True})
 
