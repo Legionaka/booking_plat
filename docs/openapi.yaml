@@ -1,0 +1,523 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Booking Platform API",
+    "version": "1.0.0",
+    "description": "Cookie-authenticated JSON API. Detailed schemas, authorization, and error semantics are in api.md."
+  },
+  "servers": [
+    {
+      "url": "/"
+    }
+  ],
+  "paths": {
+    "/api/admin/businesses": {
+      "post": {
+        "operationId": "admin_create_business",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/admin/businesses/{business_id}": {
+      "get": {
+        "operationId": "admin_get_business",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "admin_patch_business",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/admin/businesses/{business_id}/analytics/heatmap": {
+      "get": {
+        "operationId": "insights_analytics_heatmap",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/admin/businesses/{business_id}/analytics/outcomes": {
+      "get": {
+        "operationId": "insights_analytics_outcomes",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/admin/businesses/{business_id}/analytics/status-mix": {
+      "get": {
+        "operationId": "insights_analytics_status_mix",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/admin/businesses/{business_id}/analytics/summary": {
+      "get": {
+        "operationId": "insights_analytics_summary",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/admin/businesses/{business_id}/analytics/timeseries": {
+      "get": {
+        "operationId": "insights_analytics_timeseries",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/admin/businesses/{business_id}/analytics/utilisation": {
+      "get": {
+        "operationId": "insights_analytics_utilisation",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/admin/businesses/{business_id}/audit-log": {
+      "get": {
+        "operationId": "insights_audit_log",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/admin/businesses/{business_id}/bookings": {
+      "get": {
+        "operationId": "bookings_admin_bookings",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/admin/businesses/{business_id}/calendar": {
+      "get": {
+        "operationId": "insights_calendar_day",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/admin/businesses/{business_id}/calendar/week": {
+      "get": {
+        "operationId": "insights_calendar_week",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/admin/businesses/{business_id}/customers": {
+      "get": {
+        "operationId": "insights_customers",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/admin/businesses/{business_id}/customers/{user_id}": {
+      "get": {
+        "operationId": "insights_customer_detail",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/admin/businesses/{business_id}/payments": {
+      "get": {
+        "operationId": "payments_admin_payments",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/admin/businesses/{business_id}/services": {
+      "get": {
+        "operationId": "admin_list_services",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      },
+      "post": {
+        "operationId": "admin_create_service",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/admin/businesses/{business_id}/services/{service_id}": {
+      "patch": {
+        "operationId": "admin_update_service",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/admin/businesses/{business_id}/services/{service_id}/deactivate": {
+      "post": {
+        "operationId": "admin_deactivate_service",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/admin/businesses/{business_id}/staff": {
+      "get": {
+        "operationId": "admin_list_staff",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      },
+      "post": {
+        "operationId": "admin_create_staff",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/admin/businesses/{business_id}/staff/{staff_id}": {
+      "patch": {
+        "operationId": "admin_update_staff",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/admin/businesses/{business_id}/staff/{staff_id}/deactivate": {
+      "post": {
+        "operationId": "admin_deactivate_staff",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/admin/businesses/{business_id}/staff/{staff_id}/services/{service_id}": {
+      "post": {
+        "operationId": "admin_assign_service",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "admin_unassign_service",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/admin/businesses/{business_id}/staff/{staff_id}/time-off": {
+      "get": {
+        "operationId": "admin_list_time_off",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      },
+      "post": {
+        "operationId": "admin_create_time_off",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/admin/businesses/{business_id}/staff/{staff_id}/time-off/{time_off_id}": {
+      "delete": {
+        "operationId": "admin_delete_time_off",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/admin/businesses/{business_id}/staff/{staff_id}/working-hours": {
+      "get": {
+        "operationId": "admin_get_hours",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      },
+      "put": {
+        "operationId": "admin_replace_hours",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/auth/csrf": {
+      "get": {
+        "operationId": "auth_csrf_token",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/auth/forgot": {
+      "post": {
+        "operationId": "auth_forgot",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "operationId": "auth_login",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/auth/logout": {
+      "post": {
+        "operationId": "auth_logout",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/auth/me": {
+      "get": {
+        "operationId": "auth_me",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/auth/register": {
+      "post": {
+        "operationId": "auth_register",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/auth/resend-verification": {
+      "post": {
+        "operationId": "auth_resend_verification",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/auth/reset": {
+      "post": {
+        "operationId": "auth_reset",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/auth/verify": {
+      "post": {
+        "operationId": "auth_verify",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/b/{slug}": {
+      "get": {
+        "operationId": "public_catalog_public_business",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/b/{slug}/availability": {
+      "get": {
+        "operationId": "availability_availability",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/b/{slug}/bookings": {
+      "post": {
+        "operationId": "bookings_create_booking",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/b/{slug}/services": {
+      "get": {
+        "operationId": "public_catalog_public_services",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/b/{slug}/slots": {
+      "get": {
+        "operationId": "availability_slots",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/b/{slug}/staff": {
+      "get": {
+        "operationId": "public_catalog_public_staff",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/bookings/{booking_id}": {
+      "patch": {
+        "operationId": "bookings_update_booking",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/bookings/{booking_id}/pay": {
+      "post": {
+        "operationId": "payments_start_payfast_payment",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/config": {
+      "get": {
+        "operationId": "public_config",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/me/bookings": {
+      "get": {
+        "operationId": "bookings_my_bookings",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/me/bookings/{booking_id}": {
+      "get": {
+        "operationId": "bookings_my_booking",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/payments/payfast/itn": {
+      "post": {
+        "operationId": "payments_payfast_itn",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    }
+  }
+}

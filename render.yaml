@@ -38,6 +38,8 @@ services:
           name: booking-platform-redis
           type: keyvalue
           property: connectionString
+    domains:
+      - booking-plat.onrender.com
 
   - type: worker
     name: booking-platform-worker

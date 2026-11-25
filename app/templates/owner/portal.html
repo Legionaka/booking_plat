@@ -43,6 +43,7 @@
 </div>
 {% endblock %}
 {% block page_scripts %}
+<script src="{{ url_for('static', filename='js/api.js') }}" defer></script>
 <script src="{{ url_for('static', filename='js/charts/svg.js') }}" defer></script>
 <script src="{{ url_for('static', filename='js/charts/sparkline.js') }}" defer></script>
 <script src="{{ url_for('static', filename='js/charts/area.js') }}" defer></script>

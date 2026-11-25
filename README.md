@@ -2,96 +2,104 @@
 
 [![CI](https://github.com/Legionaka/booking_plat/actions/workflows/ci.yml/badge.svg)](https://github.com/Legionaka/booking_plat/actions/workflows/ci.yml)
 
-A multi-tenant booking platform for barbers, clinics, tutors, and other appointment-based businesses. It provides public availability and booking flows, business administration, secure customer accounts, PayFast deposits, and reliable email reminders while keeping each business's data isolated.
+A multi-tenant booking platform for appointment-based small businesses. Customers can find availability, book, pay a deposit through PayFast, and manage appointments; owners and staff manage schedules and services through a tenant-scoped workspace. Flask, PostgreSQL constraints, and an idempotent outbox keep booking and notification work reliable.
+
+**Live demo:** [booking-plat.onrender.com](https://booking-plat.onrender.com). The demo is configured for sandbox payments only; no real payment is taken. Demo credentials are provided by the hosted demo environment and are not repeated in this repository. The local seeded demo login is `owner@fade-lab.demo` / `DemoOnly-ChangeMe-2026!`; use only for local development.
+
+## Screenshots
+
+Playwright generates the product captures below into `docs/assets/screenshots/` during the database-backed browser suite. The login capture is also maintained by the responsive auth screenshot run.
+
+| Landing | Authentication | Customer booking | Owner dashboard | Analytics |
+| --- | --- | --- | --- | --- |
+| ![New landing page](docs/assets/screenshots/landing-1440.png) | ![Sign-in screen](docs/assets/screenshots/login-1440.png) | ![Customer booking review](docs/assets/screenshots/customer-flow.png) | ![Owner dashboard](docs/assets/screenshots/owner-dashboard.png) | ![Analytics](docs/assets/screenshots/analytics.png) |
+
+The public `/` landing page is a portfolio and product introduction, with a keyboard-operable slot picker, live demo paths, engineering detail, and no contact email. It is implemented in code rather than a separate Figma landing frame.
+
+## Features
+
+**Customers:** public business and service pages, timezone-aware availability, booking, deposit checkout handoff, payment status polling, booking history, cancellation and rescheduling.
+
+**Owners:** onboarding, business settings, services and staff management, working hours/time off, day and week calendars, booking status actions, customers, payments, analytics, QR booking link, and audit log.
+
+**Staff:** scoped calendar and booking actions for assigned work, with owner-only settings hidden and enforced by the API.
+
+**Platform:** PostgreSQL overlap constraint, tenant-scoped APIs, server-side sessions and CSRF, PayFast ITN verification, SMTP/HTTP email backends, transactional outbox, RQ worker and scheduler, Docker Compose, and Render blueprint.
+
+## Technology
+
+| Area | Implementation |
+| --- | --- |
+| Web | Python 3.12+, Flask blueprints, Jinja templates |
+| Data | PostgreSQL, SQLAlchemy, Alembic, Pydantic |
+| Jobs | Redis, RQ worker and scheduler, transactional notification outbox |
+| Payments | PayFast sandbox/live configuration with signed ITN handling |
+| Email | Console for local development, SMTP/Mailpit, or HTTPS APIs (Brevo, Resend, Mailgun) |
+| UI | Vanilla HTML/CSS/JS, self-hosted fonts, hand-written accessible SVG charts |
+| Delivery | Docker, Docker Compose, GitHub Actions, Render |
 
 ## Architecture
 
 ```mermaid
 flowchart LR
-    Customer[Customer browser] --> Web[Flask API]
-    Owner[Business owner or staff] --> Web
-    Web --> PG[(PostgreSQL)]
-    Web --> Redis[(Redis)]
-    Web --> Outbox[Transactional email outbox]
-    Scheduler[Scheduler process] --> PG
-    Scheduler --> Redis
-    Redis --> Worker[RQ email worker]
-    Worker --> PG
-    Worker --> SMTP[SMTP provider]
-    Web --> PayFast[PayFast checkout and ITN]
+  Browser[Customer, staff, owner browser] -->|HTML and JSON over HTTPS| Flask[Flask application]
+  Flask --> PG[(PostgreSQL)]
+  Flask --> Redis[(Redis sessions, rate limits, queue)]
+  Flask -->|transactional notification intent| Outbox[(PostgreSQL outbox)]
+  Scheduler[Scheduler] --> PG
+  Scheduler --> Redis
+  Redis --> Worker[RQ worker]
+  Worker --> PG
+  Worker --> Email[SMTP or HTTPS email API]
+  Flask --> PayFast[PayFast checkout]
+  PayFast -->|signed ITN callback| Flask
 ```
-
-## Features
-
-- Tenant-scoped business, service, staff, working hours, and time-off management.
-- Public availability with timezone-aware slots and booking creation, cancellation, and rescheduling.
-- PostgreSQL-backed booking lifecycle, PayFast deposit handling, and idempotent payment notifications.
-- Customer accounts, server-side sessions, email verification, password reset, and role checks.
-- Transactional email outbox, RQ worker, scheduler, and booking reminders.
-- Owner calendars, analytics, customer history, audit logs, and deterministic demo data.
-- Docker Compose for local PostgreSQL and Redis; Render blueprint for hosted deployment.
 
 ## Design decisions
 
-- **Database exclusion constraint:** PostgreSQL prevents overlapping active bookings for the same staff member, including service buffers. Application checks improve error messages, while the database remains the concurrency authority.
-- **UTC storage:** Instants are stored in UTC. Business-local dates and working-hour windows are converted using each business's IANA timezone.
-- **Integer cents:** Prices, deposits, and payments use integer cents to avoid floating-point currency errors.
-- **Transactional outbox:** Booking and payment transactions write notification intent into PostgreSQL. Workers deliver email after commit and retry failures.
-- **Idempotent webhooks:** PayFast ITN processing locks payment records and ignores repeated completion events.
-- **Tenant scoping:** Queries for business-owned data include `business_id`; unauthorized cross-business reads return not found.
+- **Overlap prevention:** PostgreSQL's partial GiST exclusion constraint rejects intersecting active staff booking ranges, including service buffers. The application maps that conflict to 409.
+- **Time and money:** persist timestamps as UTC-aware instants; store amounts in integer cents and snapshot the booking price.
+- **Outbox and idempotency:** booking/payment state and notification intent are committed together. Provider references and notification uniqueness make retries safe.
+- **Tenant scope:** business-owned reads and writes include the business identifier, and cross-tenant access is tested.
+- **Security and visual policy:** strict CSP disallows inline execution; UI uses flat monochrome tokens with no gradients, masks, or external assets.
 
-## Run locally
+```sql
+EXCLUDE USING gist (
+  staff_id WITH =,
+  tstzrange(start_at, blocked_until, '[)') WITH &&
+) WHERE (status IN ('pending', 'confirmed'));
+```
 
-Requirements: Docker Desktop with Compose and Python 3.12+ for local CLI commands.
+## Run locally in five commands
 
-```sh
+Requires Docker Compose and Python 3.12+.
+
+```powershell
 Copy-Item .env.example .env
-docker compose up --build db redis web worker scheduler
+# In .env, set EMAIL_BACKEND=smtp and SMTP_HOST=mailpit (replace existing values).
+docker compose --profile dev up --build -d
+python -m pip install --require-hashes -r requirements-dev.txt
+python -m flask --app app:create_app db upgrade
+python -m flask --app app:create_app seed-demo
 ```
 
-The API is available at `http://localhost:5000`. For an optional demo business, run:
+Open `http://localhost:5000`. Mailpit's inbox is at `http://127.0.0.1:8025`. If you leave the default console backend, development verification and reset links are printed in the web container log instead. Configuration details: [environment variables](docs/environment.md) and [operations](docs/operations.md).
+
+## Tests and quality checks
+
+Start Postgres and Redis with `docker compose up -d db redis`, then run:
 
 ```sh
-docker compose exec web flask --app app:create_app seed-demo
+python scripts/check.py --e2e
 ```
 
-Local email uses the console backend by default and prints complete messages, including verification and reset links, to the web container output. To catch SMTP messages in Mailpit instead, replace the existing email/SMTP settings in `.env` with the optional Mailpit settings in `.env.example` (do not append duplicate keys), then start the dev profile:
+This installs locked development requirements, prepares dedicated test databases, runs Ruff, frontend policy, pytest with coverage, browser E2E/accessibility tests, render configuration contracts, and a Docker build. Run individual layers as documented in [docs/testing.md](docs/testing.md). Latest local results are recorded there after the full check; unavailable services are reported as blockers rather than inferred passes.
 
-```sh
-docker compose --profile dev up
-```
+Verified on 2026-11-23: **273 backend tests passed, 1 platform-specific skip; 108 Chromium tests passed; 88.77% overall coverage and 89.85% service coverage; zero serious/critical axe findings.** Ruff, frontend policy, and the Docker image build passed. See [test details](docs/testing.md).
 
-Open the inbox at [http://127.0.0.1:8025](http://127.0.0.1:8025). Open a verification or password-reset message and follow the link in its plain-text body. Mailpit's SMTP and web UI ports bind to loopback only. The default console backend prints message bodies only when `APP_ENV=development`; other environments never print email bodies or tokens.
+## Deploy to Render
 
-The default demo owner login (`owner@fade-lab.demo` / `DemoOnly-ChangeMe-2026!`) is for local demos only. Change the demo credentials before sharing a non-production environment. Overnight shifts must be entered as two working-hour ranges because each range requires `end_time` later than `start_time`.
-
-See [docs/environment.md](docs/environment.md) for configuration and [docs/operations.md](docs/operations.md) for migrations, backups, restore, and deployment operations.
-
-## Run tests
-
-Start the PostgreSQL and Redis services, then run the same full check sequence used by CI:
-
-```sh
-docker compose up -d db redis
-python scripts/check.py
-```
-
-The script installs the hashed development lock, prepares dedicated test databases, runs Ruff, the strict frontend policy scan, the full pytest suite, and builds the production Docker image. Set `TEST_DATABASE_URL`, `MIGRATION_DATABASE_URL`, and `TEST_REDIS_URL` if you use dedicated test resources instead of the local Compose defaults.
-
-Dependency ranges live in `requirements.in` and `requirements-dev.in`; the hashed locks are compiled with pip-tools. See [docs/operations.md](docs/operations.md#dependency-updates-and-local-verification) for the update procedure. Dependabot checks pip, GitHub Actions, and Docker weekly.
-
-## Roadmap
-
-- Frontend pages implemented from the approved Figma frames.
-- Owner calendar and analytics views.
-- Production SMTP account configuration and monitoring dashboards.
-- Future payment operations such as automated refunds, if approved.
-
-## Live demo and screenshots
-
-- **Live demo:** `[Deployment URL to be added]`
-- The demo runs in PayFast sandbox mode; no real payments are processed.
-- **Screenshots:** `[ product screenshots here]`
+The checked-in `render.yaml` provisions PostgreSQL, Redis, web, worker, and scheduler. Configure the production environment group, HTTPS base URLs, PayFast credentials, and `EMAIL_BACKEND=http_api` with a verified sender and provider API key. Render Free blocks outbound SMTP, so use the HTTPS email API. Review quotas, database retention, backups, and paid service limits before a public launch. See [operations.md](docs/operations.md).
 
 ## Project structure
 
@@ -101,11 +109,9 @@ app/
   models/
   schemas/
   services/
+  jobs/
   templates/
-app/static/
-  css/
-  fonts/
-  js/
+  static/
 docs/
   assets/screenshots/
   design/
@@ -113,10 +119,22 @@ docs/
 migrations/
 scripts/
 tests/
-  concurrency/
   contract/
   e2e/
   integration/
   unit/
+.github/
+  workflows/
 ```
 
+## Roadmap
+
+Deferred work includes walk-in bookings (requires a product decision on customer identity), waitlist, staff invitations, TOTP, session management UI, multi-business switcher, platform-admin tools, and automated refunds. See [planning.md](docs/planning.md) and [Figma frame deferrals](docs/design/figma.md).
+
+## License
+
+MIT; see [LICENSE](LICENSE).
+
+## Author
+
+**Legion Cunningham** · [Portfolio](https://portfolio-v3-ochre-rho.vercel.app/)

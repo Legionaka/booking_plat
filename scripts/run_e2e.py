@@ -2,13 +2,15 @@
 
 from __future__ import annotations
 
+import json
 import os
 import subprocess
 import sys
 import time
+from http.cookiejar import CookieJar
 from pathlib import Path
-from urllib.error import URLError
-from urllib.request import urlopen
+from urllib.error import HTTPError, URLError
+from urllib.request import HTTPCookieProcessor, Request, build_opener, urlopen
 
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine import make_url
@@ -60,6 +62,26 @@ def wait_until_ready(base_url: str, process: subprocess.Popen[bytes], log_path: 
     )
 
 
+def verify_seeded_login(base_url: str, email: str, password: str) -> None:
+    """Prove that the running server sees the seeded owner before browser flows start."""
+    client = build_opener(HTTPCookieProcessor(CookieJar()))
+    with client.open(f"{base_url}/api/auth/csrf", timeout=20) as response:
+        csrf = json.load(response)["data"]["csrf_token"]
+    request = Request(
+        f"{base_url}/api/auth/login",
+        data=json.dumps({"email": email, "password": password}).encode(),
+        headers={"Content-Type": "application/json", "X-CSRF-Token": csrf},
+        method="POST",
+    )
+    try:
+        with client.open(request, timeout=20) as response:
+            status = response.status
+    except HTTPError as error:
+        status = error.code
+    if status != 200:
+        raise RuntimeError(f"Seeded demo login smoke check returned HTTP {status}.")
+
+
 def main() -> int:
     database_url = os.getenv(
         "TEST_DATABASE_URL",
@@ -76,6 +98,8 @@ def main() -> int:
     artifact_dir.mkdir(parents=True, exist_ok=True)
     log_path = artifact_dir / "server.log"
     server_env = os.environ.copy()
+    server_env.setdefault("DEMO_OWNER_EMAIL", "owner@fade-lab.demo")
+    server_env.setdefault("DEMO_OWNER_PASSWORD", "DemoOnly-ChangeMe-2026!")
     server_env.update(
         {
             "APP_ENV": "development",
@@ -87,6 +111,8 @@ def main() -> int:
             "PUBLIC_BASE_URL": base_url,
             "PAYFAST_SANDBOX": "true",
             "PORT": str(port),
+            "AUTH_LOGIN_EMAIL_RATE_LIMIT": "100 per minute",
+            "AUTH_LOGIN_IP_RATE_LIMIT": "500 per hour",
         }
     )
     prepare_test_databases(database_url, migration_url)
@@ -98,6 +124,21 @@ def main() -> int:
     )
     subprocess.run(
         [sys.executable, "-m", "flask", "--app", "app:create_app", "seed-demo", "--reset"],
+        cwd=ROOT,
+        env=server_env,
+        check=True,
+    )
+    subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            "from app import create_app; from app.services.auth import authenticate; "
+            "app=create_app({'TESTING': True}); "
+            "ctx=app.app_context(); ctx.push(); "
+            "authenticate(app.config['DEMO_OWNER_EMAIL'], app.config['DEMO_OWNER_PASSWORD']); "
+            "authenticate('customer01@fade-lab.demo', 'Demo-Customer-01-ChangeMe!'); "
+            "ctx.pop()",
+        ],
         cwd=ROOT,
         env=server_env,
         check=True,
@@ -126,11 +167,19 @@ def main() -> int:
         )
         try:
             wait_until_ready(base_url, server, log_path)
+            verify_seeded_login(
+                base_url,
+                str(server_env.get("DEMO_OWNER_EMAIL", "owner@fade-lab.demo")),
+                str(server_env.get("DEMO_OWNER_PASSWORD", "DemoOnly-ChangeMe-2026!")),
+            )
             e2e_env = server_env.copy()
             e2e_env["E2E_BASE_URL"] = base_url
             e2e_env["E2E_EMAIL_LOG"] = str(log_path)
+            requested_paths = os.getenv("E2E_TEST_PATHS", "").strip()
             test_paths = (
-                ["tests/e2e/test_auth_smoke.py"]
+                requested_paths.split(os.pathsep)
+                if requested_paths
+                else ["tests/e2e/test_auth_smoke.py"]
                 if os.getenv("E2E_SMOKE_ONLY", "false").lower() in {"1", "true", "yes"}
                 else ["tests/e2e/test_auth_layout.py"]
                 if os.getenv("E2E_LAYOUT_ONLY", "false").lower() in {"1", "true", "yes"}

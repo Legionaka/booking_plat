@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import json
 import os
 import re
+from pathlib import Path
 
 import pytest
 from playwright.sync_api import Browser, Page, expect
@@ -12,16 +14,43 @@ BASE_URL = os.getenv("E2E_BASE_URL", "http://127.0.0.1:5001")
 
 
 def sign_in(page: Page, customer: int = 1) -> None:
-    page.goto(f"{BASE_URL}/auth/login")
-    page.locator("#login-email").fill(f"customer{customer:02d}@fade-lab.demo")
-    page.locator("#login-password").fill(f"Demo-Customer-{customer:02d}-ChangeMe!")
-    page.get_by_role("button", name="Sign in").click()
+    email = f"customer{customer:02d}@fade-lab.demo"
+    password = f"Demo-Customer-{customer:02d}-ChangeMe!"
+    page.goto(f"{BASE_URL}/auth/login", wait_until="domcontentloaded")
+    page.locator("#login-email").fill(email)
+    page.locator("#login-password").fill(password)
+    with page.expect_response("**/api/auth/login") as response_info:
+        page.get_by_role("button", name="Sign in").click()
+    response = response_info.value
+    if response.status != 200:
+        payload = json.loads(response.request.post_data or "{}")
+        raise AssertionError(
+            f"Login API returned {response.status}; "
+            f"submitted email matches={payload.get('email') == email}, "
+            f"password matches={payload.get('password') == password}; "
+            f"error={response.json().get('error', {}).get('code')}"
+        )
     expect(page).to_have_url(re.compile(r"/account$"))
 
 
 def choose_available_time(page: Page, service_name: str) -> None:
     page.goto(f"{BASE_URL}/b/fade-lab/book")
-    page.get_by_role("button", name=re.compile(service_name, re.IGNORECASE)).click()
+    cards = page.locator("[data-service-list] .service-card")
+    page.wait_for_timeout(500)
+    card_count = cards.count()
+    if not card_count:
+        state = page.locator("[data-page-state]").inner_text()
+        raise AssertionError(
+            f"No service cards on {page.url}; view="
+            f"{page.locator('[data-customer-page]').get_attribute('data-view')}; state={state!r}"
+        )
+    card = next(
+        cards.nth(index)
+        for index in range(card_count)
+        if cards.nth(index).locator("h3").inner_text().strip().casefold()
+        == service_name.casefold()
+    )
+    card.click()
     page.get_by_role("button", name="Choose a time").click()
     available_day = page.locator("[data-availability-strip] button:not([disabled])").first
     expect(available_day).to_be_visible()
@@ -37,6 +66,11 @@ def test_customer_can_book_without_a_deposit(browser: Browser):
     page = browser.new_page()
     sign_in(page)
     choose_available_time(page, "Fade")
+    expect(page.locator("[data-review-deposit]")).to_have_text("No deposit required")
+    screenshot_dir = Path(__file__).resolve().parents[2] / "docs" / "assets" / "screenshots"
+    screenshot_dir.mkdir(parents=True, exist_ok=True)
+    expect(page.locator("[data-review-price]")).to_contain_text("Service total")
+    page.screenshot(path=screenshot_dir / "customer-flow.png", full_page=True)
     page.get_by_role("button", name="Confirm booking").click()
     expect(page).to_have_url(re.compile(r"/book/confirmed/\d+$"))
     expect(page.get_by_role("heading", name="Your booking is confirmed.")).to_be_visible()
@@ -198,7 +232,7 @@ def test_customer_can_reschedule_to_an_available_slot(browser: Browser):
         service:booking.service_id,staff:booking.staff_id,from,to
       });
       const range = await fetch(`/api/b/fade-lab/availability?${rangeQuery}`).then((r)=>r.json());
-      for (const day of range.data.days.filter((item)=>item.open)) {
+      for (const day of range.data.days.filter((item)=>item.open && item.date > from)) {
         const slotQuery = new URLSearchParams({
           service:booking.service_id,staff:booking.staff_id,date:day.date
         });
@@ -213,7 +247,10 @@ def test_customer_can_reschedule_to_an_available_slot(browser: Browser):
     if not dates:
         pytest.skip("The seeded service has no alternate open slot in the next two weeks.")
     page.goto(f"{BASE_URL}/account/bookings/{booking['id']}/reschedule")
-    page.locator("[data-reschedule-date]").fill(dates["date"])
+    date_input = page.locator("[data-reschedule-date]")
+    expect(date_input).to_have_attribute("min", re.compile(r"^\d{4}-\d{2}-\d{2}$"))
+    date_input.fill(dates["date"])
+    date_input.dispatch_event("change")
     slot = page.locator("[data-reschedule-slots] .slot-key").first
     expect(slot).to_be_visible()
     slot.click()
@@ -224,11 +261,19 @@ def test_customer_can_reschedule_to_an_available_slot(browser: Browser):
 
 def test_payment_return_waits_for_backend_confirmation(browser: Browser):
     page = browser.new_page()
-    sign_in(page)
+    sign_in(page, 2)
     page.goto(f"{BASE_URL}/account/bookings")
-    bookings = page.evaluate(
-        """async () => (await fetch('/api/me/bookings?filter=upcoming')).json().data"""
+    response = page.evaluate(
+        """async () => {
+          const response = await fetch('/api/me/bookings?filter=upcoming');
+          return {status: response.status, payload: await response.json()};
+        }"""
     )
+    assert response["status"] == 200 and isinstance(response["payload"].get("data"), list), (
+        f"Customer booking API did not return a list: status={response['status']}, "
+        f"keys={list(response['payload'])}"
+    )
+    bookings = response["payload"]["data"]
     pending = next((item for item in bookings if item["status"] == "pending"), None)
     if pending is None:
         pytest.skip("The deterministic demo seed has no pending deposit booking for this run.")

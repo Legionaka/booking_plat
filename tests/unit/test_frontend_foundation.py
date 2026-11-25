@@ -211,3 +211,51 @@ def test_components_page_requires_development_or_demo_mode(app, monkeypatch):
         assert visible.status_code == 200
     finally:
         app.config.update(APP_ENV=original_env, DEMO_MODE=original_demo_mode)
+
+
+def test_public_landing_page_is_rendered(app, monkeypatch, assert_rendered_page_contract):
+    monkeypatch.setattr(app.extensions["redis"], "delete", lambda *_args: 0)
+    client = app.test_client()
+
+    response = client.get("/")
+
+    assert response.status_code == 200
+    assert_rendered_page_contract(response.text, "/")
+    assert "data-landing-page" in response.text
+    assert "Bookings that never double up." in response.text
+    assert 'href="/b/fade-lab"' in response.text
+    assert 'href="/auth/register"' in response.text
+    assert 'href="/auth/login?portal=business"' in response.text
+
+    css = client.get("/static/css/components/landing.css")
+    assert css.status_code == 200
+    js = client.get("/static/js/pages/landing.js")
+    assert js.status_code == 200
+    assert '<html lang="en">' in response.text
+    assert response.text.lower().count("<h1") == 1
+    assert "@" not in response.text
+    assert "<style" not in response.text
+    assert "data:" not in response.text.lower()
+    assert 'style="' not in response.text
+    assert "gradient" not in response.text.lower()
+
+    app.config["DEMO_MODE"] = False
+    demo_off = client.get("/")
+    assert "Live demo: sandbox payments only." not in demo_off.text
+    app.config["DEMO_MODE"] = True
+    demo_on = client.get("/")
+    assert "Live demo: sandbox payments only." in demo_on.text
+
+    robots = client.get("/robots.txt")
+    assert robots.status_code == 200
+    assert "Disallow: /app" in robots.text
+    assert "Disallow: /account" in robots.text
+    assert "Disallow: /platform" in robots.text
+    assert "Disallow: /dev" in robots.text
+
+    sitemap = client.get("/sitemap.xml")
+    assert sitemap.status_code == 200
+    assert "/app" not in sitemap.text
+    assert "/account" not in sitemap.text
+    assert "/platform" not in sitemap.text
+    assert "/dev" not in sitemap.text

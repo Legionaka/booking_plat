@@ -49,7 +49,7 @@ def main() -> int:
     parser.add_argument(
         "--e2e",
         action="store_true",
-        help="run the optional Chromium authentication browser smoke test",
+        help="run the Chromium browser and accessibility suite",
     )
     args = parser.parse_args()
     run(
@@ -76,8 +76,13 @@ def main() -> int:
             "-p",
             "no:cacheprovider",
             "--ignore=tests/e2e",
+            "--cov=app",
+            "--cov-report=term-missing",
+            "--cov-report=json:coverage.json",
+            "--cov-fail-under=80",
         ]
     )
+    run([sys.executable, "scripts/check_coverage.py", "coverage.json"])
     if args.e2e:
         run([sys.executable, "scripts/run_e2e.py"])
     run(["docker", "build", "--tag", "booking-platform:ci", "."])

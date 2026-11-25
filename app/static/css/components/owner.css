@@ -74,7 +74,7 @@
 .owner-day-row { display: grid; grid-template-columns: 90px 1fr 1fr auto; align-items: center; gap: 8px; }
 .owner-day-row input[type=time] { min-width: 0; }
 .owner-timeline { display: grid; gap: 8px; overflow-x: auto; }
-.owner-timeline-row { display: grid; grid-template-columns: 92px repeat(var(--columns, 2), minmax(180px, 1fr)); min-width: 700px; border-bottom: 1px solid var(--glass-border); }
+.owner-timeline-row { display: grid; grid-template-columns: 92px repeat(auto-fit, minmax(180px, 1fr)); min-width: 700px; border-bottom: 1px solid var(--glass-border); }
 .owner-timeline-cell { min-height: 52px; padding: 8px; border-left: 1px solid var(--glass-border); }
 .owner-booking-block { display: grid; gap: 3px; margin: 4px 0; padding: 8px; border-left: 3px solid var(--steel); border-radius: var(--r-small); background: var(--graphite); color: var(--pearl); text-align: left; }
 .owner-booking-block--confirmed { border-left-color: var(--jade); }

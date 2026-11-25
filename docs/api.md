@@ -72,7 +72,7 @@ Reject all other transitions with a clear conflict error. The plan's customer-fa
 
 ## Owner and staff management
 
-Implemented owner and staff management routes, permissions, pagination, audit logging, and request details are documented in the Business administration section below. Booking calendar routes remain planned.
+Implemented owner and staff management routes, permissions, pagination, audit logging, and booking calendar reads are documented in the Business administration section below.
 
 ## Payments and health
 

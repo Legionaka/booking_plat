@@ -37,6 +37,7 @@ F1 route mapping and implemented template:
 | Platform admin | `/platform/businesses`, `/platform/businesses/<id>`, `/platform/health` | `platform/` | Platform endpoints |
 | System states | 404, 500, offline | `errors/` | None |
 | Emails | Confirmation, 24-hour reminder, cancellation | `emails/` | Rendered by background jobs |
+| Public landing | `/` | `landing.html` | None; links to public booking and authentication routes |
 
 The command palette, booking detail drawer, and toasts are shared components, not routes.
 
@@ -123,3 +124,7 @@ The customer and owner portals now use the implemented API endpoints. The platfo
 - Owner signs in and requests a password reset.
 - Staff accepts an invite.
 - Owner completes onboarding.
+
+## Landing page disposition
+
+The public `/` landing page was designed in code, not in Figma. It keeps the repository's shared flat monochrome tokens and component behavior, with no Figma frame as a separate landing source.

@@ -108,7 +108,6 @@
     if (!staff.length) { target.innerHTML = `<div class="owner-empty">No staff or bookings to show today.</div>`; return; }
     const hours = Array.from({ length: 12 }, (_, index) => `${String(index + 7).padStart(2, "0")}:00`);
     target.innerHTML = `<div class="owner-timeline"><div class="owner-timeline-row"><div class="owner-timeline-cell"></div>${staff.map((member) => `<div class="owner-timeline-cell"><strong>${esc(member.display_name)}</strong></div>`).join("")}</div>${hours.map((hour) => `<div class="owner-timeline-row" data-hour="${hour.slice(0, 2)}"><div class="owner-timeline-cell">${hour}</div>${staff.map((member) => `<div class="owner-timeline-cell">${(member.bookings || []).filter((item) => Number(new Intl.DateTimeFormat("en", { timeZone: data.timezone, hour: "2-digit", hourCycle: "h23" }).format(new Date(item.start_at))) === Number(hour.slice(0, 2))).map((item) => `<button type="button" class="owner-booking-block owner-booking-block--${esc(item.status)}" data-open-booking="${item.id}"><strong>${esc(item.service)}</strong><span>${esc(item.customer_name)} · ${esc(formatTime(item.start_at))}</span>${status(item.status)}</button>`).join("")}</div>`).join("")}</div>`).join("")}</div>`;
-    target.querySelectorAll(".owner-timeline-row").forEach((row) => row.style.setProperty("grid-template-columns", `92px repeat(${staff.length}, minmax(180px, 1fr))`));
     const nowParts = new Intl.DateTimeFormat("en", { timeZone: data.timezone, hour: "2-digit", hourCycle: "h23" }).formatToParts(new Date());
     const nowHour = Number(nowParts.find((part) => part.type === "hour")?.value);
     const dateInZone = new Intl.DateTimeFormat("en-CA", { timeZone: data.timezone, year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
@@ -154,8 +153,9 @@
     dialog.querySelector("[data-service-form]").addEventListener("submit", async (event) => {
       event.preventDefault(); const form = new FormData(event.currentTarget); const data = { name: form.get("name"), description: form.get("description") || null, duration_min: Number(form.get("duration_min")), buffer_min: Number(form.get("buffer_min")), price_cents: Math.round(Number(form.get("price")) * 100), deposit_cents: Math.round(Number(form.get("deposit")) * 100) };
       try {
+        const formElement = event.currentTarget;
         const serviceRow = item.id ? await patch(url(`/services/${item.id}`), data) : await post(url("/services"), data);
-        const selected = new Set(Array.from(event.currentTarget.querySelectorAll("[name='staff_ids']:checked"), (input) => Number(input.value)));
+        const selected = new Set(Array.from(formElement.querySelectorAll("[name='staff_ids']:checked"), (input) => Number(input.value)));
         await Promise.all(staffRows.map((member) => {
           const wasAssigned = member.service_ids?.includes(serviceRow.id) || false;
           if (selected.has(member.id) && !wasAssigned) return post(url(`/staff/${member.id}/services/${serviceRow.id}`), {});
@@ -222,7 +222,7 @@
     root.querySelector("[data-section-label]").textContent = "Setup";
     content.innerHTML = `<div class="owner-page-heading"><div><h1>Let’s get your business ready</h1><p>Create a business, add a service, set hours and staff, then share your booking page.</p></div></div><nav class="owner-stepper" aria-label="Onboarding steps"><span class="owner-step" aria-current="step">1 · Business</span><span class="owner-step">2 · Service</span><span class="owner-step">3 · Hours and staff</span><span class="owner-step">4 · Share</span></nav><section class="owner-panel" data-onboarding-step></section>`;
     const stage = content.querySelector("[data-onboarding-step]"); const data = {};
-    const show = (number, title, fields, button) => { content.querySelectorAll(".owner-step").forEach((item, index) => item.toggleAttribute("aria-current", index === number - 1)); stage.innerHTML = `<h2>${title}</h2><form class="owner-form" data-onboard-form>${fields}<button class="button button--primary" type="submit">${button}</button></form>`; };
+    const show = (number, title, fields, button) => { content.querySelectorAll(".owner-step").forEach((item, index) => { if (index === number - 1) item.setAttribute("aria-current", "step"); else item.removeAttribute("aria-current"); }); stage.innerHTML = `<h2>${title}</h2><form class="owner-form" data-onboard-form>${fields}<button class="button button--primary" type="submit">${button}</button></form>`; };
     show(1, "Business profile", '<label>Business name<input name="name" required></label><label>Booking page slug<input name="slug" pattern="[a-z0-9-]{3,40}" minlength="3" maxlength="40" required></label><label>Timezone<input name="timezone" value="Africa/Johannesburg" required></label>', "Create business");
     stage.addEventListener("submit", async (event) => { event.preventDefault(); const form = new FormData(event.target); try {
       if (!businessId) { const created = await post("/api/admin/businesses", { name: form.get("name"), slug: form.get("slug"), timezone: form.get("timezone") }); businessId = created.id; data.business = created; root.dataset.businessId = String(businessId); }

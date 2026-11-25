@@ -3,10 +3,12 @@
 import os
 
 import pytest
+from axe_playwright_python.sync_playwright import Axe
 from playwright.sync_api import Browser
 
 BASE_URL = os.getenv("E2E_BASE_URL", "http://127.0.0.1:5001")
 PAGE_ROUTES = (
+    "/",
     "/auth/login",
     "/auth/register",
     "/auth/verify",
@@ -44,7 +46,7 @@ PAGE_ROUTES = (
 @pytest.mark.parametrize("path", PAGE_ROUTES)
 def test_page_has_no_computed_gradient_background(browser: Browser, path: str):
     page = browser.new_page()
-    response = page.goto(f"{BASE_URL}{path}")
+    response = page.goto(f"{BASE_URL}{path}", wait_until="domcontentloaded")
     assert response is not None and response.status == 200
     backgrounds = page.locator("*").evaluate_all(
         "elements => elements.map(element => ({tag: element.tagName, "
@@ -53,4 +55,14 @@ def test_page_has_no_computed_gradient_background(browser: Browser, path: str):
         ".filter(item => item.background.includes('gradient'))"
     )
     assert not backgrounds, f"Gradient backgrounds found on {path}: {backgrounds}"
+    results = Axe().run(page)
+    serious = [
+        violation
+        for violation in results.response["violations"]
+        if violation["impact"] in {"serious", "critical"}
+    ]
+    assert not serious, (
+        f"Serious/critical accessibility violations on {path}:\n"
+        f"{results.generate_report()}"
+    )
     page.close()

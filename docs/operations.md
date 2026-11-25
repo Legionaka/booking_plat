@@ -61,11 +61,11 @@ python -m piptools compile --upgrade --allow-unsafe --strip-extras --generate-ha
 
 Review the pins and hashes, then run `python scripts/check.py`. Dependabot opens weekly PRs for pip, GitHub Actions, and Docker updates. CI and local verification use the same script so lint, frontend policy, the full test suite, and the production image build stay in sync.
 
-For a local run, start real Postgres and Redis first with `docker compose up -d db redis`, then run `python scripts/check.py`. It installs the hashed development lock, creates the two dedicated test databases if needed, runs Ruff and the frontend policy scanner, runs the regular pytest suite (excluding browser tests), and builds the production Docker image. Add `--e2e` to also run the optional Chromium suite. CI provides Postgres and Redis service containers and invokes the regular command; the browser suite runs in its own non-blocking job.
+For a local run, start real Postgres and Redis first with `docker compose up -d db redis`, then run `python scripts/check.py --e2e`. It installs the hashed development lock, creates the two dedicated test databases if needed, runs Ruff and the frontend policy scanner, runs pytest with coverage and service-level thresholds, runs the Chromium and axe suite, then builds the production Docker image. CI runs this same full gate; an additional non-blocking auth screenshot job publishes browser artifacts.
 
-### Browser auth smoke test
+### Browser regression and screenshots
 
-The optional Chromium end-to-end test exercises registration, verification, sign-in, sign-out, rejected credentials, and unsafe `next` values. It starts a local Flask process against the dedicated test PostgreSQL database and test Redis database. The app uses `EMAIL_BACKEND=console`; the verification URL is read from the captured server stdout, and the test does not use Mailpit. No real mailbox, SMTP, or PayFast account is used. The captured development email contains a one-time token, so keep `.artifacts/e2e/server.log` local and do not share it.
+The Chromium suite exercises auth, customer booking, owner workspace, responsive layouts, flat surfaces, and axe accessibility. It starts a local Flask process against the dedicated test PostgreSQL database and test Redis database. The app uses `EMAIL_BACKEND=console`; verification URLs are read from captured server stdout, and the suite does not use Mailpit. No real mailbox, SMTP, or PayFast account is used. The captured development email contains one-time tokens, so keep `.artifacts/e2e/server.log` local and do not share it.
 
 Install the Chromium browser after installing the hashed development requirements:
 
@@ -80,7 +80,15 @@ Run the optional test locally with:
 python scripts/check.py --e2e
 ```
 
-The run saves full-page screenshots for each auth page at 1440, 820, and 390 px, with reduced motion enabled and disabled, under `.artifacts/e2e/screenshots/`. Login and registration also have 100%-zoom layout captures at 1920×1080, 2560×1440, 1440×900, 820×1180, and 390×844 under `.artifacts/e2e/auth-layout/`; the browser test checks panel width, primary-action visibility, and narrow-screen horizontal overflow. CI runs this in a separate non-blocking job and uploads both screenshot folders as an artifact.
+The suite saves full-page auth captures at 1440, 820, and 390 px with reduced motion enabled and disabled under `.artifacts/e2e/screenshots/`. Login and registration also have layout captures at 1920×1080, 2560×1440, 1440×900, 820×1180, and 390×844 under `.artifacts/e2e/auth-layout/`. The README customer, dashboard, analytics, and auth screenshots are committed under `docs/assets/screenshots/`.
+
+### Troubleshooting
+
+- **PostgreSQL connection refused:** confirm `docker compose ps` shows the `db` service healthy and that `.env` uses the published host port (`localhost:5433` for this Compose project). Containers connect to `db:5432`; host commands must not use that container-only hostname.
+- **Redis unavailable or API returns 503:** start `docker compose up -d redis`, verify `docker compose exec redis redis-cli ping` returns `PONG`, and check `REDIS_URL`/`RATELIMIT_STORAGE_URI`. Auth endpoints fail closed with 503 when Redis cannot be reached.
+- **Seed fails on missing tables:** apply migrations first with `flask --app app:create_app db upgrade`, then run `flask --app app:create_app seed-demo`. The seed command intentionally does not create or migrate schema.
+- **Render Free email cannot deliver over SMTP:** use `EMAIL_BACKEND=http_api` and a verified HTTPS provider sender/API key. SMTP ports 25, 465, and 587 are blocked on Render Free; provider setup is documented above.
+- **`/ready` is unhealthy:** check PostgreSQL reachability from the app container, inspect JSON logs by `X-Request-ID`, then verify `DATABASE_URL`. Redis availability is checked separately for auth/session operations.
 
 ## Render deployment setup
 
@@ -147,4 +155,14 @@ This starts Gunicorn, the normal RQ worker, and the scheduler as child processes
 
 ## Health and incidents
 
-Use `/health` for liveness and `/ready` for PostgreSQL/Redis readiness. Each response includes `X-Request-ID`; use that ID to correlate application JSON logs. Keep raw PayFast ITN payload retention limited as described in `payments.md`.
+Use `/health` for liveness and `/ready` for PostgreSQL readiness. `/ready` does not depend on Redis; Redis-backed sessions and auth routes continue to fail closed independently. Each response includes `X-Request-ID`; use that ID to correlate application JSON logs. Keep raw PayFast ITN payload retention limited as described in `payments.md`.
+
+## Deployment smoke check
+
+After a deployment, run the standard-library smoke checker (no credentials or extra packages):
+
+```sh
+python scripts/smoke.py https://booking-plat.onrender.com
+```
+
+It checks health, readiness, public configuration, landing/discovery routes, demo booking routes, unknown-path JSON, protected-page redirects, trailing slashes, and required security headers. A non-zero exit means at least one check failed.
