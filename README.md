@@ -10,9 +10,11 @@ A multi-tenant booking platform for appointment-based small businesses. Customer
 
 Playwright generates the product captures below into `docs/assets/screenshots/` during the database-backed browser suite. The login capture is also maintained by the responsive auth screenshot run.
 
-| Authentication | Customer booking | Owner dashboard | Analytics |
-| --- | --- | --- | --- |
-| ![Sign-in screen](docs/assets/screenshots/login-1440.png) | ![Customer booking review](docs/assets/screenshots/customer-flow.png) | ![Owner dashboard](docs/assets/screenshots/owner-dashboard.png) | ![Analytics](docs/assets/screenshots/analytics.png) |
+| Landing | Authentication | Customer booking | Owner dashboard | Analytics |
+| --- | --- | --- | --- | --- |
+| ![New landing page](docs/assets/screenshots/landing-1440.png) | ![Sign-in screen](docs/assets/screenshots/login-1440.png) | ![Customer booking review](docs/assets/screenshots/customer-flow.png) | ![Owner dashboard](docs/assets/screenshots/owner-dashboard.png) | ![Analytics](docs/assets/screenshots/analytics.png) |
+
+The public `/` landing page is a portfolio and product introduction, with a keyboard-operable slot picker, live demo paths, engineering detail, and no contact email. It is implemented in code rather than a separate Figma landing frame.
 
 ## Features
 
@@ -135,4 +137,4 @@ MIT; see [LICENSE](LICENSE).
 
 ## Author
 
-**Legion Cunningham** · [Portfolio](https://portfolio-v3-ochre-rho.vercel.app/) · Legioncunningham@gmail.com
+**Legion Cunningham** · [Portfolio](https://portfolio-v3-ochre-rho.vercel.app/)

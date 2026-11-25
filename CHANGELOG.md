@@ -1,5 +1,10 @@
 # Changelog
 
+## Landing page
+
+- Replace `/` with a code-designed portfolio and product landing page.
+- Add an interactive slot picker, mobile focus-managed menu, engineering diagram, real screenshots, SEO metadata, robots and sitemap routes, and a test-data notice.
+
 ## Phase 5 — documentation and quality gates
 
 - Refresh project and developer documentation to describe shipped features and deferred work.

@@ -8,6 +8,7 @@ from playwright.sync_api import Browser
 
 BASE_URL = os.getenv("E2E_BASE_URL", "http://127.0.0.1:5001")
 PAGE_ROUTES = (
+    "/",
     "/auth/login",
     "/auth/register",
     "/auth/verify",

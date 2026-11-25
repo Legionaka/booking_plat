@@ -4,6 +4,7 @@ Figma source: [Booking platform design](https://www.figma.com/design/u1iNRYeax7O
 
 | Customer state | Figma frame IDs | Route and implementation | Data and states |
 |---|---|---|---|
+| Platform landing (code-designed) | No Figma frame | `/` · `landing.html`, `landing.css`, `landing.js` | Product hero, interactive slot picker, three-step sequence, customer/owner panels, engineering diagram, demo paths, tech stack, SEO routes; responsive at 390, 820, 1440, and 1920 px |
 | Business landing | 390: `2:480`; 820: `2:3502`; 1440: `2:3464` | `/b/{slug}` · `customer/portal.html`, `customer.js` | `GET /api/config`, business, services, availability range, then first open slot; loading, no services, API error, offline |
 | Choose service and staff | 390: `2:512`; 820: `2:3574`; 1440: `2:3534` | `/b/{slug}/book` | Public services and staff; selected service, staff, disabled/ready continue states |
 | Choose date and time | 390: `2:546`; 820: `2:3655`; 1440: `2:3608` | `/b/{slug}/book/time` | Range availability and daily slots; selected Pearl slot with 2 px ring, empty day, invalid service, conflict refresh |

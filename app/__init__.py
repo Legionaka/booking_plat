@@ -197,6 +197,8 @@ def create_app(test_config: dict[str, object] | None = None) -> Flask:
 
     @app.after_request
     def security_headers(response):
+        if request.path.startswith("/static/"):
+            response.headers.setdefault("Cache-Control", "public, max-age=86400")
         response.headers["Content-Security-Policy"] = content_security_policy_for(
             request.endpoint
         )

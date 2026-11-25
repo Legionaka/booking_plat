@@ -19,6 +19,16 @@ def safe_next_path(value: str | None) -> str | None:
     return value
 
 
+@web_bp.get("/")
+def landing_page():
+    base_url = str(current_app.config["PUBLIC_BASE_URL"]).rstrip("/")
+    return render_template(
+        "landing.html",
+        public_base_url=base_url,
+        demo_mode=bool(current_app.config.get("DEMO_MODE")),
+    )
+
+
 @web_bp.get("/auth/login")
 def login_page():
     slug = request.args.get("business", "")
@@ -110,6 +120,11 @@ def offline_page():
     return render_template("errors/offline.html")
 
 
+@web_bp.get("/privacy")
+def privacy_notice():
+    return render_template("errors/privacy.html")
+
+
 @web_bp.get("/b/<slug>")
 @web_bp.get("/b/<slug>/book")
 @web_bp.get("/b/<slug>/book/time")
@@ -163,3 +178,42 @@ def customer_payment_return():
         view="payment_cancelled" if cancelled else "payment_return",
         booking_id=booking_id if booking_id.isdecimal() else "",
     )
+
+
+@web_bp.get("/robots.txt")
+def robots_txt():
+    lines = (
+        "User-agent: *",
+        "Allow: /",
+        "Disallow: /app",
+        "Disallow: /account",
+        "Disallow: /platform",
+        "Disallow: /dev",
+        "Disallow: /api",
+        "Disallow: /payments",
+        f"Sitemap: {str(current_app.config['PUBLIC_BASE_URL']).rstrip('/')}/sitemap.xml",
+        "",
+    )
+    return Response("\n".join(lines), mimetype="text/plain")
+
+
+@web_bp.get("/sitemap.xml")
+def sitemap_xml():
+    base_url = str(current_app.config["PUBLIC_BASE_URL"]).rstrip("/")
+    routes = (
+        "/",
+        "/b/fade-lab",
+        "/auth/login",
+        "/auth/register",
+        "/auth/forgot",
+        "/auth/verify",
+    )
+    urls = "".join(
+        f"  <url><loc>{base_url}{route}</loc></url>\n" for route in routes
+    )
+    body = (
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+        f"{urls}</urlset>\n"
+    )
+    return Response(body, mimetype="application/xml")

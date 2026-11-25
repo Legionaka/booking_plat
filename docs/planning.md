@@ -11,7 +11,7 @@ Multi-tenant appointment booking for small businesses. Customers find a service 
 - PostgreSQL exclusion constraint for active booking overlaps; conflicts become HTTP 409.
 - PayFast checkout handoff, signed ITN validation, idempotent payment updates, sandbox mode, and status polling.
 - Transactional email outbox, console/SMTP/HTTPS delivery, RQ worker, scheduler, and reminders.
-- Customer booking/account screens; owner onboarding, dashboard, week calendar, bookings, services, staff, hours, customers, payments, analytics, settings/QR, and audit log.
+- Public platform landing page; customer booking/account screens; owner onboarding, dashboard, week calendar, bookings, services, staff, hours, customers, payments, analytics, settings/QR, and audit log.
 - Docker Compose, Render blueprint, CI, demo seed, unit/integration/contract/browser test suites.
 
 See [API](api.md), [architecture](architecture.md), [screens](design/screens.md), and [testing](testing.md).

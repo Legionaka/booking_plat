@@ -30,3 +30,7 @@ Live log of the finish/full-build run. Updated at the end of every phase and whe
 
 ## Known issues
 - docs/KNOWN_ISSUES.md does not exist yet; create if any phase ships with tracked limitations
+
+## Landing page update
+
+The public `/` route now uses a code-designed portfolio and product page with a keyboard-operable slot picker, accessible mobile menu, real product screenshots, engineering content, and public discovery metadata. Full verification and the local commit are in progress.

@@ -7,6 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="color-scheme" content="dark">
     <title>{% block page_title %}Booking Platform{% endblock %}</title>
+    {% block meta_tags %}{% endblock %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/fonts.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/tokens.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
@@ -17,6 +18,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/components/system.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/components/customer.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/components/owner.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components/landing.css') }}">
     <script src="{{ url_for('static', filename='js/main.js') }}" defer></script>
     <script src="{{ url_for('static', filename='js/components/toast.js') }}" defer></script>
     <script src="{{ url_for('static', filename='js/components/auth-controls.js') }}" defer></script>
