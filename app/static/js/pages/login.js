@@ -45,14 +45,10 @@
     const values = new FormData(form);
     setBusy(true);
     try {
-      await api.post("/api/auth/login", { email: values.get("email"), password: values.get("password") });
-      const { data } = await api.get("/api/auth/me");
-      const memberships = data.user.memberships || [];
-      if (memberships.some((item) => item.role === "owner" || item.role === "staff")) {
-        window.location.assign("/app");
-        return;
-      }
-      window.location.assign(safeNext(root.dataset.next) || "/account");
+      const login = await api.post("/api/auth/login", { email: values.get("email"), password: values.get("password") });
+      const next = safeNext(root.dataset.next);
+      window.location.assign(next || login.data.redirect || "/account");
+      return;
     } catch (error) {
       if (error.code === "email_not_verified") {
         sessionStorage.setItem("auth-verification-email", String(values.get("email")));
